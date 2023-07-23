@@ -8,14 +8,37 @@
     "lib",
     "dist"
   ],
-  "license": "MIT",
+  "license": "MIT",  
+  "repository": {
+  "type": "git",
+  "url": "git+https://github.com/ChengTu-Lazy/koishi-plugin-dst-search.git"
+  },
   "scripts": {},
   "keywords": [
-    "chatbot",
+    "DST",
+    "search",
     "koishi",
     "plugin"
   ],
   "peerDependencies": {
     "koishi": "^4.13.8"
+  },
+  "koishi":{
+    "name": "koishi-plugin-dst-search",
+    "version": "1.0.0",
+    "peerDependencies": {
+      "koishi": "^4.3.2"
+    },
+    "koishi": {
+      "description": {                       
+        "zh": "查询饥荒联机服务器"
+      },
+      "service": {
+        "required": ["database"],             
+        "optional": ["assets"],               
+        "implements": ["dialogue"]      
+      },
+      "locales": ["zh"]          
+    }
   }
 }
