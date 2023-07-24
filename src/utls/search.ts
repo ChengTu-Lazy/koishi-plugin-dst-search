@@ -44,7 +44,7 @@ export async function getSimpleSendInfoAsync(ctx: Context, config: Config,userId
 }
 
 
-export async function getDetailSendInfoAsync(ctx: Context, config: Config,userId:string,detailInfo :JSON) {
+export async function getDetailSendInfoAsync(detailInfo :JSON) {
 
   let DetailSendInfo = await processDetailInfoAsync(detailInfo)
   

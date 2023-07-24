@@ -60,7 +60,7 @@ export  async function apply(ctx: Context, config: Config) {
       if (rowIds.length >= num && num > 0) {
         const rowId = await dataAPI.getRowIdByArrayAsync(ctx,rowIds,num)
         const detailInfo  = (await dataAPI.getRoomDetailInfoAsync(ctx,config.Token,rowId))[0]
-        const send  = await searchUtl.getDetailSendInfoAsync(ctx,config,userId,detailInfo)
+        const send  = await searchUtl.getDetailSendInfoAsync(detailInfo)
 
         // //数据进行处理之后输出
         return send
@@ -88,20 +88,20 @@ export  async function apply(ctx: Context, config: Config) {
     autoInc: true,
   })
 
-  //定时更新数据内容,重新配置了默认内容之后得要重启koishi
-  async function doTaskAsync() {
-    await dbAPI.updateDbRegionInfoAsync(ctx)
-    await dbAPI.updateDbRoomSimpleInfoAsync(ctx, config)
-    await dbAPI.updateDbRoomDetailInfoAsync(ctx, config)
-  }
+  // //定时更新数据内容,重新配置了默认内容之后得要重启koishi
+  // async function doTaskAsync() {
+  //   await dbAPI.updateDbRegionInfoAsync(ctx)
+  //   await dbAPI.updateDbRoomSimpleInfoAsync(ctx, config)
+  //   await dbAPI.updateDbRoomDetailInfoAsync(ctx, config)
+  // }
   
-  async function runAsyncTaskWithInterval(fn, interval) {
-    while (true) {
-      await new Promise(resolve => setTimeout(resolve, interval))
-      await fn()
-    }
-  }
+  // async function runAsyncTaskWithInterval(fn, interval) {
+  //   while (true) {
+  //     await new Promise(resolve => setTimeout(resolve, interval))
+  //     await fn()
+  //   }
+  // }
   
-  runAsyncTaskWithInterval(doTaskAsync, config.Interval)
+  // runAsyncTaskWithInterval(doTaskAsync, config.Interval)
 
 }

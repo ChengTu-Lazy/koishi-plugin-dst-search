@@ -31,6 +31,15 @@ export async function getRoomSimpleInfoAsync(ctx: Context, searchName: string): 
 }
 
 export async function getRoomDetailInfoAsync(ctx: Context,token:string,rowId: string): Promise<JSON[]> {
+    const dbInfos : any= await ctx.database.get('dstinfo',{name : "RoomDetailInfo"})
+
+
+    for(const info of dbInfos[0].info){
+      if (JSON.stringify(info).includes(rowId)) {
+        return info       
+      }
+    }
+
     const regions = await dbAPI.getDbLobbyRegionsAsync(ctx);
     for (const region of regions) {
       const url = `https://lobby-v2-${region}.klei.com/lobby/read`;
