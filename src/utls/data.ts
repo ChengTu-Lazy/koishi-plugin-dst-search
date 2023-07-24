@@ -33,7 +33,6 @@ export async function getRoomSimpleInfoAsync(ctx: Context, searchName: string): 
 export async function getRoomDetailInfoAsync(ctx: Context,token:string,rowId: string): Promise<JSON[]> {
     const dbInfos : any= await ctx.database.get('dstinfo',{name : "RoomDetailInfo"})
 
-
     for(const info of dbInfos[0].info){
       if (JSON.stringify(info).includes(rowId)) {
         return info       
