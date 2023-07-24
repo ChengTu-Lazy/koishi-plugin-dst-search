@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-dst-search",
   "description": "查询饥荒联机服务器",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -22,23 +22,5 @@
   ],
   "peerDependencies": {
     "koishi": "^4.13.8"
-  },
-  "koishi":{
-    "name": "koishi-plugin-dst-search",
-    "version": "1.0.0",
-    "peerDependencies": {
-      "koishi": "^4.3.2"
-    },
-    "koishi": {
-      "description": {                       
-        "zh": "查询饥荒联机服务器"
-      },
-      "service": {
-        "required": ["database"],             
-        "optional": ["assets"],               
-        "implements": ["dialogue"]      
-      },
-      "locales": ["zh"]          
-    }
   }
 }

@@ -82,7 +82,7 @@ async function processDetailInfoAsync(jsonStr: any): Promise<string> {
   // 格式化输出字符串
   const output = `【${name}】(${platform})(${connected}/${maxConnections})\n` +
                  `【天数】${currentDay}${season}(${daysElapsedInSeason}/${totalSeasonDays})(${intent})\n` +
-                 `🏆玩家列表🏆${playerList}\n📃模组列表📃\n${modList}\n` +
+                 `🏆玩家列表🏆\n${playerList}\n📃模组列表📃\n${modList}\n` +
                  `直连代码：${connectCode}`;
 
   return output;
@@ -95,7 +95,7 @@ function getConnectCode(addr: string, port: string): string {
 async function getPlayerListAsync(data) {
   const parsedData = parsePlayersData(data);
   if (parsedData.length === 0) {
-    return "\n无";
+    return "无";
   }
   const mergedData = await Promise.all(parsedData.map(async (item, index) => {
     const { name, prefab } = item;
@@ -103,8 +103,13 @@ async function getPlayerListAsync(data) {
     const displayString = `${index + 1}. ${name}${translatedPrefab ? ` (${translatedPrefab})` : ''}`;
     return displayString;
   }));
-  const lastItem = mergedData.pop();
-  const result = mergedData.join('\n') + (lastItem ? '\n' + lastItem : '');
+  let result = "";
+  if (mergedData.length === 1) {
+    result = mergedData[0];
+  } else {
+    const lastItem = mergedData.pop();
+    result = mergedData.join('\n') + '\n' + lastItem;
+  }
   return result;
 }
 
@@ -123,9 +128,8 @@ function parsePlayersData(dataStr) {
   return JSON.parse(jsonString);
 }
 
-
 function getModList(data: string[]): string {
-  const result = data.reduce((acc: string[], curr: string, index: number) => {
+  const result = (data || []).reduce((acc: string[], curr: string, index: number) => {
     // 每 5 个元素为一个完整的数据项
     if (index % 5 === 1) {
       const addonName = curr;
@@ -137,9 +141,7 @@ function getModList(data: string[]): string {
   if (result.length === 0) {
     return "无";
   } else {
-    const lastItem = result.pop();
-    const resultString = result.join('\n') + (lastItem ? '\n' + lastItem : '');
-    return resultString;
+    return result.join('\n');
   }
 }
 

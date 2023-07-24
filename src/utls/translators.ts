@@ -61,7 +61,9 @@ export function modeToZh(mode: string): string {
   const modeTranslations = {
     'endless': '无尽',
     'survival': '生存',
-    'wilderness': '荒野'
+    'wilderness': '荒野',
+    'relaxed': '放松',
+    'oceanfishing': '海钓'
   };
   return modeTranslations[mode] || mode;
 }

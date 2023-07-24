@@ -52,8 +52,6 @@ export  async function apply(ctx: Context, config: Config) {
 
   ctx.command('s-detail [number]',"查询饥荒联机单个服务器详细信息").shortcut(/^\.(\d+)$/, { args: ['$1'] }).shortcut(/^\。(\d+)$/, { args: ['$1'] }).action(async (Session,numberStr)=>{
     let userId = Session.session.userId
-    console.log(userId);
-    
     const data = await ctx.database.get('dstinfo',{name : userId})
     try {
       const rowIds:string[] = JSON.parse(JSON.stringify(data[0].info))
