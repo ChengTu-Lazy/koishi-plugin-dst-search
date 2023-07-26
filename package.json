@@ -1,17 +1,17 @@
 {
   "name": "koishi-plugin-dst-search",
   "description": "查询饥荒联机服务器",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
     "lib",
     "dist"
   ],
-  "license": "MIT",  
+  "license": "MIT",
   "repository": {
-  "type": "git",
-  "url": "git+https://github.com/ChengTu-Lazy/koishi-plugin-dst-search.git"
+    "type": "git",
+    "url": "git+https://github.com/ChengTu-Lazy/koishi-plugin-dst-search.git"
   },
   "scripts": {},
   "keywords": [
@@ -21,6 +21,7 @@
     "plugin"
   ],
   "peerDependencies": {
-    "koishi": "^4.13.8"
+    "koishi": "^4.13.8",
+    "puppeteer": "^20.0.0"
   }
 }

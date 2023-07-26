@@ -80,8 +80,8 @@ async function processDetailInfoAsync(jsonStr: any): Promise<string> {
   const totalSeasonDays = parseInt(daysElapsedInSeason, 10) + parseInt(daysLeftInSeason, 10);
 
   // 格式化输出字符串
-  const output = `【${name}】(${platform})(${connected}/${maxConnections})\n` +
-                 `【天数】${currentDay}${season}(${daysElapsedInSeason}/${totalSeasonDays})(${intent})\n` +
+  const output = `[${name}](${platform})(${connected}/${maxConnections})\n` +
+                 `[天数]${currentDay}${season}(${daysElapsedInSeason}/${totalSeasonDays})(${intent})\n` +
                  `🏆玩家列表🏆\n${playerList}\n📃模组列表📃\n${modList}\n` +
                  `直连代码：${connectCode}`;
 
