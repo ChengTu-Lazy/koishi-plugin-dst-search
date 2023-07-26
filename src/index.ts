@@ -4,7 +4,7 @@ import * as dataAPI from './utls/data'
 import * as searchUtl from './utls/search'
 import {} from 'koishi-plugin-puppeteer'
 export const name = 'dst-search'
-export const using = ["puppeteer"] as const;
+export const using = ["puppeteer",'database'] 
 
 //配置构型
 export interface Config {
@@ -38,7 +38,7 @@ export interface DSTInfo {
 //插件入口
 export  async function apply(ctx: Context, config: Config) {
 
-  ctx.command('s-image [flag]',"设置输出的格式是否为图片（1：true，0：false，不输取反）").shortcut(/^查房格式切换 (1|0)$/, { args: ['$1'] }).shortcut(/^查房格式切换$/, { args: ['$1'] }).action(async (Session,flag)=>{
+  ctx.command('s-image [flag]',"设置输出的格式是否为图片（1：true，0：false，不输取反）").shortcut(/^\|\| (1|0)$/, { args: ['$1'] }).shortcut(/^\|\|$/, { args: ['$1'] }).action(async (Session,flag)=>{
     if (flag == null) {
       config.IsSendImage = ! config.IsSendImage
     }else{
