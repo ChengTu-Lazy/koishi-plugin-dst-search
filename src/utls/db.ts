@@ -41,7 +41,6 @@ export async function updateDbRoomSimpleInfoAsync(ctx: Context,config: Config): 
 
       const x = await ctx.database.get('dstinfo', { id: 2 });
       
-      
       if (x.length === 0) {
         await  ctx.database.create('dstinfo', {
           id: 2,
@@ -65,7 +64,7 @@ export async function updateDbRoomDetailInfoAsync(ctx: Context,config: Config): 
   try {
     const names = dataUtl.getNames(await getDbRoomSimpleInfoAsync(ctx))
     const rowIds = await dataUtl.getRowIdsAsync(ctx,names)
-    const results = await dataUtl.getResultsAsync(ctx,config,rowIds)
+    const results = await dataUtl.getRoomDetailInfoByRowIdsAsync(ctx,config,rowIds)
     
     if((await ctx.database.get('dstinfo',{id:3})).length === 0){
       ctx.database.create('dstinfo', {

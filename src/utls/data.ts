@@ -30,6 +30,26 @@ export async function getRoomSimpleInfoAsync(ctx: Context, searchName: string): 
   return JSON.parse(JSON.stringify(result.slice(0, 10)));
 }
 
+export async function getRoomDetailInfoForDbAsync(ctx: Context,token:string,rowId: string): Promise<JSON[]> {
+  const regions = await dbAPI.getDbLobbyRegionsAsync(ctx);
+  for (const region of regions) {
+    const url = `https://lobby-v2-${region}.klei.com/lobby/read`;
+    try {
+      const response = await ctx.http.post(url, {
+        "__token": `${token}`,
+        "__gameId": "DST",
+        "Query": {
+          "__rowId": `${rowId}`
+        }
+      });
+      return response.GET
+    } catch (error) {
+      //查不到的时候的报错，直接忽略
+    }
+  }
+  // throw new Error(`Failed to get room detail info for rowId: ${rowId}`);
+}
+
 export async function getRoomDetailInfoAsync(ctx: Context,token:string,rowId: string): Promise<JSON[]> {
     const dbInfos : any= await ctx.database.get('dstinfo',{name : "RoomDetailInfo"})
     if (dbInfos.length != 0) {
@@ -97,10 +117,10 @@ export async function getRowIdByArrayAsync(ctx: Context, rowIds : string[],index
   return rowId
 }
 
-export async function getResultsAsync(ctx: Context,config: Config,rowIds: string[]) {
+export async function getRoomDetailInfoByRowIdsAsync(ctx: Context,config: Config,rowIds: string[]) {
     const results = []
     for (const rowId of rowIds) {
-        const result = await getRoomDetailInfoAsync(ctx,config.Token,rowId);
+        const result = await getRoomDetailInfoForDbAsync(ctx,config.Token,rowId);
         results.push(result)
     }
     return results

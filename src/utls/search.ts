@@ -10,7 +10,10 @@ export async function getSimpleSendInfoByArrayAsync(ctx: Context, config: Config
   for(const name of names){
     //默认加载了的房间，从数据库查
     if (config.DefaultSearchName.includes(name)) {
-      res.push(...(await dbUtl.getDbRoomSimpleInfoAsync(ctx)))
+      const RoomSimpleInfo =  await dbUtl.getDbRoomSimpleInfoAsync(ctx)
+      if (RoomSimpleInfo.length != 0) {
+        res.push(...(RoomSimpleInfo))
+      }
       res = res.flat()
     }
     else{
