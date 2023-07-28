@@ -13,8 +13,8 @@ jobs:
         with:
           node-version: 16
           
-      - name: Setup TypeScript
-        uses: Tyler887/TypeScript-GitHub-Actions@1.0
+#       - name: Setup TypeScript
+#         uses: Tyler887/TypeScript-GitHub-Actions@1.0
       
       - name: Install Dependencies
         run: npm ci
