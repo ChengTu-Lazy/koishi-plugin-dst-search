@@ -2,14 +2,14 @@ name: Update Npm By Yarn pub
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Node Setup
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           
@@ -26,13 +26,15 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - name: Node Setup
+        uses: actions/setup-node@v3
         with:
           node-version: 16
           registry-url: https://registry.npmjs.org/
-      - run: npm ci
       
+      - name: Install Dependencies
+        run: npm ci
+
       - name: Yarn Setup
         uses: DerYeger/yarn-setup-action@v1.0.1
         with:
