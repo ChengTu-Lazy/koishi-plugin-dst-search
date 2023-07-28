@@ -22,13 +22,13 @@ jobs:
           node-version: 16
       
       - name: 安装依赖
-        run: npm install
+        run: yarn  install
 
-      - name: 安装 TypeScript
-        run: yarn add -D typescript
+      - name: 添加上级依赖
+        run: yarn add koishi koishi-plugin-puppeteer
 
       - name: Build
-        run: npm run build
+        run: yarn run build
 
   publish-npm:
     needs: build
