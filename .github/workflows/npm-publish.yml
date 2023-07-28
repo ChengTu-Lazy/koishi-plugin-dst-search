@@ -2,12 +2,13 @@ name: Update Npm By Yarn pub
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Node Setup
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
@@ -26,6 +27,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - name: Node Setup
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with:
