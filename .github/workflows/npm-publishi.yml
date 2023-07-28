@@ -29,6 +29,23 @@ jobs:
 
       - name: Build
         run: yarn run build
+        
+  publish-npm:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Node Setup
+        uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          registry-url: https://registry.npmjs.org/
       
+      - name: Yarn Setup
+        uses: DerYeger/yarn-setup-action@v1.0.1
+        with:
+          node-version: 16
+
       - name: Publish to npm
-        run: yarn publish --access public --npm-auth-token ${{ secrets.NPM_TOKEN }}
+        run: yarn publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
