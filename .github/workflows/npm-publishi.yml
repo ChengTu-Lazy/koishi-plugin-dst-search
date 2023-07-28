@@ -8,13 +8,20 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
       - name: Node Setup
         uses: actions/setup-node@v3
         with:
           node-version: 16
       
+      - name: 查看当前工作目录
+        run: ls
+
       - name: Build TypeScript
         run: npm run build
+        working-directory:
 
   publish-npm:
     needs: build
