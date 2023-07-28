@@ -21,10 +21,10 @@ jobs:
         with:
           node-version: 16
       
-      - name: 安装依赖
+      - name: yarn  install
         run: yarn  install
 
-      - name: 添加上级依赖
+      - name: yarn add koishi koishi-plugin-puppeteer
         run: yarn add koishi koishi-plugin-puppeteer
 
       - name: Build
@@ -40,9 +40,6 @@ jobs:
           node-version: 16
           registry-url: https://registry.npmjs.org/
       
-      - name: 查看目录
-        run: ls
-
       - name: Yarn Setup
         uses: DerYeger/yarn-setup-action@v1.0.1
         with:
