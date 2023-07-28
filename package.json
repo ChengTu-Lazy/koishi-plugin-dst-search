@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-dst-search",
   "description": "查询饥荒联机服务器(支持图片和文字格式输出)",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -14,7 +14,7 @@
     "url": "git+https://github.com/ChengTu-Lazy/koishi-plugin-dst-search.git"
   },
   "scripts": {
-    "build": "tsc -b"
+    "build": "tsc"
   },
   "keywords": [
     "DST",
