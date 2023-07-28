@@ -22,13 +22,13 @@ jobs:
           node-version: 16
       
       - name: 安装依赖
-        run: yarn install
+        run: npm ci
 
       - name: 安装 TypeScript
         run: yarn add -D typescript
 
       - name: Build
-        run: tsc
+        run: npm run build
 
   publish-npm:
     needs: build
