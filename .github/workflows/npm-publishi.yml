@@ -28,7 +28,7 @@ jobs:
         run: yarn add -D typescript
 
       - name: Build
-        run: npm run build
+        run: tsc
 
   publish-npm:
     needs: build
