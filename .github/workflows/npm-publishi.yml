@@ -24,7 +24,10 @@ jobs:
       - name: 安装依赖
         run: yarn install
 
-      - name: Build TypeScript
+      - name: 安装 TypeScript
+        run: yarn add -D typescript
+
+      - name: Build
         run: npm run build
 
   publish-npm:
