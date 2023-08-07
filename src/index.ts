@@ -5,7 +5,7 @@ export const using = ['database']
 
 import { SimpleInfo } from "./modules/simpleinfo-module";
 import { DetailInfo } from "./modules/detailinfo-module";
-import { RegionInfo } from './regionInfo/regioninfo';
+import { RegionInfo } from './regioninfo/regioninfo';
 
 //配置构型
 export interface Config {

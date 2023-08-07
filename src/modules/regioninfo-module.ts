@@ -1,4 +1,4 @@
-export { RegionInfo } from "../regionInfo/regioninfo";
-export { RegionProvider } from "../regionInfo/region-provider";
-export { ApiRegionProvider } from "../regionInfo/api-region-provider";
-export { DbRegionProvider } from "../regionInfo/db-region-provider";
+export { RegionInfo } from "../regioninfo/regioninfo";
+export { RegionProvider } from "../regioninfo/region-provider";
+export { ApiRegionProvider } from "../regioninfo/api-region-provider";
+export { DbRegionProvider } from "../regioninfo/db-region-provider";

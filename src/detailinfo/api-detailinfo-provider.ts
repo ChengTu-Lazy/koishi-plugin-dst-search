@@ -1,5 +1,4 @@
 import { DetailInfoProvider } from "./detailinfo-provider";
-import { SimpleInfo } from "../simpleInfo/simpleinfo";
 import { Context } from "koishi";
 import { RegionInfo } from "../modules/regioninfo-module";
 

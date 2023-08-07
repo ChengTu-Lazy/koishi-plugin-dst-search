@@ -1,4 +1,4 @@
-export { DetailInfo } from "../detailInfo/detailinfo";
-export { DetailInfoProvider } from "../detailInfo/detailinfo-provider";
-export { ApiDetailInfoProvider } from "../detailInfo/api-detailinfo-provider";
-export { DbDetailInfoProvider } from "../detailInfo/db-detailinfo-provider";
+export { DetailInfo } from "../detailinfo/detailinfo";
+export { DetailInfoProvider } from "../detailinfo/detailinfo-provider";
+export { ApiDetailInfoProvider } from "../detailinfo/api-detailinfo-provider";
+export { DbDetailInfoProvider } from "../detailinfo/db-detailinfo-provider";
