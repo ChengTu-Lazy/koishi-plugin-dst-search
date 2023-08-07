@@ -1,56 +1,9 @@
-import { Context } from "koishi";
-import { Config, name } from "../index";
-import * as dataUtl from './data'
 import * as converter from './translators'
-import * as dbUtl from './db'
 
-//通过名称数组来查服务器，适用于默认查房
-export async function getSimpleSendInfoByArrayAsync(ctx: Context, config: Config,userId:string,names :string[]) {
-  let res= [];
-  for(const name of names){
-    //默认加载了的房间，从数据库查
-    if (config.DefaultSearchName.includes(name)) {
-      const RoomSimpleInfo =  await dbUtl.getDbRoomSimpleInfoAsync(ctx)
-      if (RoomSimpleInfo.length != 0) {
-        res.push(...(RoomSimpleInfo))
-      }
-      res = res.flat()
-    }
-    else{
-      for (const searchName of config.DefaultSearchName) {
-        const simpleInfos : any= await dataUtl.getRoomSimpleInfoAsync(ctx, searchName);
-        res.push(...simpleInfos);
-      }
-      res = res.flat()
-    }
-  }
-
-  const uniqueRes = Array.from(new Set(res.map(info => info.rowId))).map(rowId => {
-    return res.find(info => info.rowId === rowId);
-  });
-  let SimpleSendInfo = await processSimpleInfoAsync(ctx,userId,uniqueRes)
-  SimpleSendInfo = SimpleSendInfo +"发送“.服务器序号”查询服务器详细信息，如:“.1”"
-  return SimpleSendInfo;
-}
-
-//通过名称来查服务器，适用于直接查房
-export async function getSimpleSendInfoAsync(ctx: Context, config: Config,userId:string,name :string) {
-
-  const simpleInfos : any= await dataUtl.getRoomSimpleInfoAsync(ctx, name);
-
-  const uniqueRes = Array.from(new Set(simpleInfos.map(info => info.rowId))).map(rowId => {
-    return simpleInfos.find(info => info.rowId === rowId);
-  });
-  let SimpleSendInfo = await processSimpleInfoAsync(ctx,userId,uniqueRes)
-  SimpleSendInfo = SimpleSendInfo +"发送“.服务器序号”查询服务器详细信息，如:“.1”"
-  return SimpleSendInfo;
-}
-
-
-export async function getDetailSendInfoAsync(detailInfo :JSON) {
+export async function GetDetailSendInfoAsync(detailInfo: JSON) {
 
   let DetailSendInfo = await processDetailInfoAsync(detailInfo)
-  
+
   return DetailSendInfo;
 }
 
@@ -84,9 +37,9 @@ async function processDetailInfoAsync(jsonStr: any): Promise<string> {
 
   // 格式化输出字符串
   const output = `[${name}](${platform})(${connected}/${maxConnections})\n` +
-                 `[天数]${currentDay}${season}(${daysElapsedInSeason}/${totalSeasonDays})(${intent})\n` +
-                 `🏆玩家列表🏆\n${playerList}\n📃模组列表📃\n${modList}\n` +
-                 `直连代码：${connectCode}`;
+    `[天数]${currentDay}${season}(${daysElapsedInSeason}/${totalSeasonDays})(${intent})\n` +
+    `🏆玩家列表🏆\n${playerList}\n📃模组列表📃\n${modList}\n` +
+    `直连代码：${connectCode}`;
 
   return output;
 }
@@ -115,8 +68,6 @@ async function getPlayerListAsync(data) {
   }
   return result;
 }
-
-
 
 function parsePlayersData(dataStr) {
   // 去掉字符串中的 return 关键字
@@ -148,35 +99,10 @@ function getModList(data: string[]): string {
   }
 }
 
-function getDayInfo(dataStr : string){
+function getDayInfo(dataStr: string) {
   const regex = /day=(\d+),\s*dayselapsedinseason=(\d+),\s*daysleftinseason=(\d+)/;
   const match = dataStr.match(regex);
-  
+
   return match
 }
 
-
-
-async function processSimpleInfoAsync(ctx: Context,userId:string,data: any[]) {
-  let result = '';
-  let rowIds = []
-  data.forEach((item, index) => {
-    let { name, connected, maxconnections, season, mode , rowId} = item;
-    season  = converter.seasonToZh(season)
-    mode = converter.modeToZh(mode)
-    result += `${index + 1}.${name}(${connected}/${maxconnections})${season}(${mode})\n`;
-    rowIds.push(rowId)
-  });
-  if ( (await   ctx.database.get('dstinfo', {name: userId})).length === 0){
-    ctx.database.create('dstinfo', {
-      name: userId,
-      info: JSON.parse(JSON.stringify(rowIds)),
-    });
-  }else{
-    ctx.database.set('dstinfo',{name : userId},{
-      name: userId,
-      info: JSON.parse(JSON.stringify(rowIds)),
-    })
-  }
-  return result;
-}
