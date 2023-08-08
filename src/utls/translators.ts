@@ -18,7 +18,10 @@ export function characterToZh(character: string): string {
     'wormwood': '沃姆伍德',
     'wurt': '沃特',
     'wanda': '旺达',
-    'wonkey': '芜猴'
+    'wonkey': '芜猴',
+    'lg_fanglingche': '[海洋传说]方灵澈',
+    'lg_lilingyi': '[海洋传说]李令仪',
+    'musha': '[精灵公主]穆莎',
   };
   return prefabTranslations[character] || character;
 }
@@ -27,20 +30,10 @@ export function characterToZh(character: string): string {
 export function platformToZh(platform: string): string {
   const platformTranslations = {
     '1': 'Steam',
-    '2': 'Klei',
-    '3': 'Xbox',
-    '4': 'PlayStation',
-    '5': 'iOS',
-    '6': 'Android',
-    '7': 'Nintendo Switch',
-    '8': 'Tencent WeGame',
-    '9': 'Discord',
-    '10': 'GOG',
-    '11': 'Microsoft Store',
-    '12': 'Epic Games',
-    '13': 'Mac App Store',
-    '14': 'Google Play',
-    '15': 'Amazon Appstore'
+    '2': 'WeGame',
+    '3': 'PlayStation',
+    '4': 'Xbox',
+    '5': 'Switch',
   };
   return platformTranslations[platform] || platform;
 }
