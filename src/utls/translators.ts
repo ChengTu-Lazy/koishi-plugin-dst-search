@@ -29,11 +29,12 @@ export function characterToZh(character: string): string {
 // 将平台代码转换为平台名称的函数
 export function platformToZh(platform: string): string {
   const platformTranslations = {
+    //["Steam", "Rail", "PSN", "XBone", "Switch"]
     '1': 'Steam',
-    '2': 'WeGame',
+    '4': 'WeGame',
     '3': 'PlayStation',
-    '4': 'Xbox',
-    '5': 'Switch',
+    '19': 'XBone',
+    '32': 'Switch',
   };
   return platformTranslations[platform] || platform;
 }

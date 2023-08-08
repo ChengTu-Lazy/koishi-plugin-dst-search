@@ -22,7 +22,7 @@ export class SimpleInfo {
         } else {
             simpleInfoProvider = new ApiSimpleInfoProvider();
         }
-        let SimpleInfos = await simpleInfoProvider.getSimpleInfosAsync(ctx, searchName);
+        let SimpleInfos = await simpleInfoProvider.getSimpleInfosAsync(ctx, config, searchName);
         return SimpleInfos
     }
 
@@ -31,15 +31,15 @@ export class SimpleInfo {
         let result = []
         let simpleInfoProvider = new ApiSimpleInfoProvider();
         for (let searchName of config.DefaultSearchName) {
-            SimpleInfo = await simpleInfoProvider.getSimpleInfosAsync(ctx, searchName)
+            SimpleInfo = await simpleInfoProvider.getSimpleInfosAsync(ctx, config, searchName)
             result.push(...SimpleInfo)
         }
         let simpleInfoJson = JSON.parse(JSON.stringify(result.flat()))
         await simpleInfoProvider.setSimpleInfosAsync(ctx, simpleInfoJson)
     }
 
-    async getMessageAsync(ctx:Context, name:string, config:Config): Promise<string> {
-        let json  = await this.getSimpleInfoAsync(ctx, name, config)
+    async getMessageAsync(ctx: Context, name: string, config: Config): Promise<string> {
+        let json = await this.getSimpleInfoAsync(ctx, name, config)
         if (JSON.stringify(json) !== "[]") {
             const simpleinfo: SimpleInfoType[] = JSON.parse(JSON.stringify(json));
             const output = simpleinfo.map((item, index) => {
@@ -50,7 +50,7 @@ export class SimpleInfo {
             }).join('\n');
             return `${output}\n发送“.服务器序号”查询服务器详细信息，如:“.1”`;
         }
-        else{
+        else {
             return "未找到该服务器！"
         }
     }

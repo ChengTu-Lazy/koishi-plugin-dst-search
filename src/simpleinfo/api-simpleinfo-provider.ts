@@ -1,14 +1,27 @@
 import { SimpleInfoProvider } from "./simpleinfo-provider";
 import { Context } from "koishi";
-import { RegionInfo } from "../modules/regioninfo-module";
+import { Config } from "..";
 
 export class ApiSimpleInfoProvider extends SimpleInfoProvider {
-    async getSimpleInfosAsync(ctx: Context, searchName: string): Promise<JSON> {
-        let regionInfo = new RegionInfo();
-        let regionsJson = await regionInfo.getRegionsAsync(ctx);
+    async getSimpleInfosAsync(ctx: Context,config:Config, searchName: string): Promise<JSON> {
         let result: any[] = []
-        for (const region of JSON.parse(JSON.stringify(regionsJson))) {
-            const url = `https://lobby-v2-cdn.klei.com/${region}-Steam.json.gz`;
+        for (const region of config.DefaultRgion) {
+            for(const platform of config.DefaultPlatform){
+                const resultTemp = await this.getInfoAsync(ctx,searchName,region,platform)
+                if (resultTemp.length !== 0) {
+                    result.push(...resultTemp);
+                }
+                if (result.length >= 10) {
+                    break;
+                }
+            }
+        }
+        return JSON.parse(JSON.stringify(result.slice(0, 10)));
+    }
+
+    async getInfoAsync(ctx: Context, searchName: string, region: string, platform: string) {
+        try {
+            const url = `https://lobby-v2-cdn.klei.com/${region}-${platform}.json.gz`;
             const response = await ctx.http.get(url);
             const resultTemp = response.GET
                 .filter((item: any) => item.name.includes(searchName))
@@ -22,12 +35,13 @@ export class ApiSimpleInfoProvider extends SimpleInfoProvider {
                     version: item.v,
                 }));
             if (resultTemp.length !== 0) {
-                result.push(...resultTemp);
+                return resultTemp
             }
-            if (result.length >= 10) {
-                break;
+            else{
+                return []
             }
+        } catch (error) {
+            return []
         }
-        return JSON.parse(JSON.stringify(result.slice(0, 10)));
     }
 }

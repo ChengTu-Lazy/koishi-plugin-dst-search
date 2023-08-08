@@ -44,6 +44,9 @@ async function processDetailInfoAsync(jsonStr: any): Promise<string> {
 }
 
 function getConnectCode(addr: string, port: string): string {
+  if (addr == "127.0.0.1") {
+    return "本地服务器,无公网IP,无法直连"
+  }
   return `c_connect("${addr}", ${port})`;
 }
 

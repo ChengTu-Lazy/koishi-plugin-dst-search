@@ -10,16 +10,36 @@ import { RegionInfo } from './regioninfo/regioninfo';
 //配置构型
 export interface Config {
   IsSendImage: boolean
+  DefaultPlatform: any
+  DefaultRgion: any
   DefaultSearchName: string[]
   Token: string
   Interval: number
 }
 
+
+
 export const Config: Schema<Config> = Schema.object({
-  IsSendImage: Schema.boolean().default(false).description('设置默认发送信息是否为图片格式，开启该功能前请检查puppeteer服务是否正确开启，图画转换功能依赖于此插件！'),
   DefaultSearchName: Schema.array(String).role('table').default(["漓江塔"]).description('设置默认查询的房间名称(模糊匹配)'),
+
+  DefaultPlatform: Schema.array(Schema.union([
+    Schema.const('Steam').description('Steam'),
+    Schema.const('Rail').description('WeGame'),
+    Schema.const('Switch').description('Switch'),
+    Schema.const('PSN').description('PlayStation'),
+    Schema.const('XBone').description('Xbox'),
+  ])).role('table').default(["Steam"]).description('设置默认查询的游戏平台,可以多选,但是多选会拖慢查询速度哦'),
+  
+  DefaultRgion: Schema.array(Schema.union([
+    Schema.const('ap-east-1').description('ap-east-1'),
+    Schema.const('us-east-1').description('us-east-1'),
+    Schema.const('eu-central-1').description('eu-central-1'),
+    Schema.const('ap-southeast-1').description('ap-southeast-1'),
+  ])).role('table').default(["ap-east-1"]).description('设置默认查询的游戏地区,中国开服一般都是ap-east-1哦,具体的可以看游戏服务器开服日志,可以多选,但是多选会拖慢查询速度哦'),
+
   Token: Schema.string().default('pds-g^KU_iC59_53i^ByQO7jK+mAPCqmyfQEo5eONht2EL6pCSKjz+1kFA2fI=').description('详细查询所需要的Token'),
-  Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔（ms）,重新配置了默认内容之后得要重启koishi!'),
+  IsSendImage: Schema.boolean().default(false).description('设置默认发送信息是否为图片格式,开启该功能前请检查puppeteer服务是否正确开启,图画转换功能依赖于此插件！'),
+  Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔(ms),重新配置了默认内容之后得要重启koishi!'),
 })
 
 //数据表的定义
@@ -54,8 +74,11 @@ export async function apply(ctx: Context, config: Config) {
   let regionInfo = new RegionInfo()
   let simpleInfo = new SimpleInfo()
   let detailInfo = new DetailInfo()
+  await regionInfo.updateRegionsAsync(ctx)
+  await simpleInfo.updateSimpleInfosAsync(ctx, config)
+  await detailInfo.updateDetailInfoAsync(ctx, config.Token)
 
-  ctx.command('s-image [flag]', "设置输出的格式是否为图片（1：true，0：false，不输取反）").shortcut(/^\|\| (1|0)$/, { args: ['$1'] }).shortcut(/^\|\|$/, { args: ['$1'] }).action(async (Session, flag) => {
+  ctx.command('s-image [flag]', "设置输出的格式是否为图片（1：true,0：false,不输取反）").shortcut(/^\|\| (1|0)$/, { args: ['$1'] }).shortcut(/^\|\|$/, { args: ['$1'] }).action(async (Session, flag) => {
     if (flag == null) {
       config.IsSendImage = !config.IsSendImage
     } else {
@@ -71,7 +94,7 @@ export async function apply(ctx: Context, config: Config) {
           break;
       }
     }
-    return `查房格式切换成功，当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
+    return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
   })
 
   ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息").shortcut(/^查房 (.*)*$/, { args: ['$1'] }).shortcut(/^查房$/, { args: ['$1'] }).action(async (Session, name) => {
@@ -80,19 +103,19 @@ export async function apply(ctx: Context, config: Config) {
       let simpleInfoJson = await simpleInfo.getSimpleInfoAsync(ctx, name, config)
       let send = await simpleInfo.getMessageAsync(ctx, name, config)
   
-      //简单查询之后计入数据库，存储后期详细查询需要的rowid
+      //简单查询之后计入数据库,存储后期详细查询需要的rowid
       simpleInfo.setUserSearchInfoAsync(ctx, userId, simpleInfoJson)
   
       if (config.IsSendImage) {
         send = await simpleInfo.getImageAsync(ctx, send)
       }
-  
+      detailInfo.updateDetailInfoAsync(ctx, config.Token)
       return send
     } catch (error) {
       await regionInfo.updateRegionsAsync(ctx)
       await simpleInfo.updateSimpleInfosAsync(ctx, config)
       await detailInfo.updateDetailInfoAsync(ctx, config.Token)
-      return "数据库已刷新，请重试！"
+      return "数据库已刷新,请重试！"
     }
   })
 

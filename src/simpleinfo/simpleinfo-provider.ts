@@ -1,7 +1,8 @@
 import { Context } from "koishi";
+import { Config } from "..";
 
 export class SimpleInfoProvider {
-  async getSimpleInfosAsync(ctx: Context,searchName?:string) :Promise<JSON>{
+  async getSimpleInfosAsync(ctx: Context,config?:Config,searchName?:string) :Promise<JSON>{
     return 
   }
 
