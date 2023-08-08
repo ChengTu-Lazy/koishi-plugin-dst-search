@@ -1,9 +1,7 @@
 import * as converter from './translators'
 
 export async function GetDetailSendInfoAsync(detailInfo: JSON) {
-
   let DetailSendInfo = await processDetailInfoAsync(detailInfo)
-
   return DetailSendInfo;
 }
 
@@ -23,6 +21,7 @@ async function processDetailInfoAsync(jsonStr: any): Promise<string> {
   intent = converter.modeToZh(intent)
 
   const players = jsonStr.players;
+
   const playerList = await getPlayerListAsync(players);
 
   const modsInfo = jsonStr.mods_info;
@@ -48,7 +47,7 @@ function getConnectCode(addr: string, port: string): string {
   return `c_connect("${addr}", ${port})`;
 }
 
-async function getPlayerListAsync(data) {
+async function getPlayerListAsync(data: string) {
   const parsedData = parsePlayersData(data);
   if (parsedData.length === 0) {
     return "无";
@@ -69,7 +68,7 @@ async function getPlayerListAsync(data) {
   return result;
 }
 
-function parsePlayersData(dataStr) {
+function parsePlayersData(dataStr: string) {
   // 去掉字符串中的 return 关键字
   dataStr = dataStr.replace(/return\s+/, '');
   // 匹配第一个左大括号和最后一个右大括号之间的内容，并将其替换为方括号

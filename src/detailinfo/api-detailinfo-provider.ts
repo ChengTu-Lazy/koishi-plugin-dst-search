@@ -1,4 +1,4 @@
-import { DetailInfoProvider } from "./detailinfo-provider";
+import { DetailInfoProvider } from "../modules/detailinfo-module";
 import { Context } from "koishi";
 import { RegionInfo } from "../modules/regioninfo-module";
 
@@ -16,8 +16,7 @@ export class ApiDetailInfoProvider extends DetailInfoProvider {
             "__rowId": `${rowId}`
           }
         });
-
-        return response.GET
+        return (response.GET)[0]
       } catch (error) {
         //查不到的时候的报错，直接忽略
       }

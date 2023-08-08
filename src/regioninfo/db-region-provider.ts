@@ -1,4 +1,4 @@
-import { RegionProvider } from "./region-provider";
+import { RegionProvider } from "../modules/regioninfo-module";
 import { Context } from "koishi";
 
 export class DbRegionProvider extends RegionProvider {

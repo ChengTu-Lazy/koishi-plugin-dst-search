@@ -20,7 +20,7 @@ export class RegionInfo {
         }
     } catch (err) {
         console.error('Failed to get Regions');
-        console.log(err);
+        // console.log(err);
     }
   }
 

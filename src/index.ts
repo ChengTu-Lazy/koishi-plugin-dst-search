@@ -19,7 +19,7 @@ export const Config: Schema<Config> = Schema.object({
   IsSendImage: Schema.boolean().default(false).description('设置默认发送信息是否为图片格式，开启该功能前请检查puppeteer服务是否正确开启，图画转换功能依赖于此插件！'),
   DefaultSearchName: Schema.array(String).role('table').default(["漓江塔"]).description('设置默认查询的房间名称(模糊匹配)'),
   Token: Schema.string().default('pds-g^KU_iC59_53i^ByQO7jK+mAPCqmyfQEo5eONht2EL6pCSKjz+1kFA2fI=').description('详细查询所需要的Token'),
-  Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔（ms）'),
+  Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔（ms）,重新配置了默认内容之后得要重启koishi!'),
 })
 
 //数据表的定义
@@ -75,18 +75,25 @@ export async function apply(ctx: Context, config: Config) {
   })
 
   ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息").shortcut(/^查房 (.*)*$/, { args: ['$1'] }).shortcut(/^查房$/, { args: ['$1'] }).action(async (Session, name) => {
-    let userId = Session.session.userId
-    let simpleInfoJson = await simpleInfo.getSimpleInfoAsync(ctx, name, config)
-    let send = await simpleInfo.getMessageAsync(ctx, name, config)
-
-    //简单查询之后计入数据库，存储后期详细查询需要的rowid
-    simpleInfo.setUserSearchInfoAsync(ctx, userId, simpleInfoJson)
-
-    if (config.IsSendImage) {
-      send = await simpleInfo.getImageAsync(ctx, send)
+    try {
+      let userId = Session.session.userId
+      let simpleInfoJson = await simpleInfo.getSimpleInfoAsync(ctx, name, config)
+      let send = await simpleInfo.getMessageAsync(ctx, name, config)
+  
+      //简单查询之后计入数据库，存储后期详细查询需要的rowid
+      simpleInfo.setUserSearchInfoAsync(ctx, userId, simpleInfoJson)
+  
+      if (config.IsSendImage) {
+        send = await simpleInfo.getImageAsync(ctx, send)
+      }
+  
+      return send
+    } catch (error) {
+      await regionInfo.updateRegionsAsync(ctx)
+      await simpleInfo.updateSimpleInfosAsync(ctx, config)
+      await detailInfo.updateDetailInfoAsync(ctx, config.Token)
+      return "数据库已刷新，请重试！"
     }
-
-    return send
   })
 
   ctx.command('s-detail [number]', "查询饥荒联机单个服务器详细信息").shortcut(/^\.(\d+)$/, { args: ['$1'] }).shortcut(/^\。(\d+)$/, { args: ['$1'] }).action(async (Session, numberStr) => {
@@ -101,11 +108,10 @@ export async function apply(ctx: Context, config: Config) {
       }
       return send
     } catch (error) {
-      // console.log(error);
+      console.log(error);
       return "请先查询再选择！"
     }
   })
-
 
   //定时更新数据内容,重新配置了默认内容之后得要重启koishi
   async function doTaskAsync() {

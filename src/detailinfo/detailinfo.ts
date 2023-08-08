@@ -4,23 +4,27 @@ import { GetDetailSendInfoAsync } from "../utls/get-detail-sendinfo-async"
 
 export class DetailInfo {
     async getDetailInfoAsync(ctx: Context, token: string, userId: string, index: number): Promise<JSON> {
-        let detailInfoProvider: DetailInfoProvider
-        let simpleInfoJson = await ctx.database.get('dstinfo', { name: "SimpleInfo" })
-        let rowIdArray = (await ctx.database.get('dstinfo', { name: userId }))[0].info
-        let length = JSON.parse(JSON.stringify(rowIdArray)).length
-        if (length == 0) {
-            return JSON.parse(`{"error":"请先查询服务器"}`)
+        try {
+            let detailInfoProvider: DetailInfoProvider
+            let simpleInfoJson = await ctx.database.get('dstinfo', { name: "SimpleInfo" })
+            let rowIdArray = (await ctx.database.get('dstinfo', { name: userId }))[0].info
+            let length = JSON.parse(JSON.stringify(rowIdArray)).length
+            if (length == 0) {
+                return JSON.parse(`{"error":"请先查询服务器"}`)
+            }
+            if (index > length || index <= 0) {
+                return JSON.parse(`{"error":"不在可选范围，当前可查${length}个服务器"}`)
+            }
+            let rowId = rowIdArray[index - 1]
+            if (JSON.stringify(simpleInfoJson).includes(rowId)) {
+                detailInfoProvider = new DbDetailInfoProvider()
+            } else {
+                detailInfoProvider = new ApiDetailInfoProvider()
+            }
+            return await detailInfoProvider.getDetailInfosAsync(ctx, rowId, token)
+        } catch (error) {
+            console.log(error);
         }
-        if (index > length || index <= 0) {
-            return JSON.parse(`{"error":"不在可选范围，当前可查${length}个服务器"}`)
-        }
-        let rowId = rowIdArray[index - 1]
-        if (JSON.stringify(simpleInfoJson).includes(rowId)) {
-            detailInfoProvider = new DbDetailInfoProvider()
-        } else {
-            detailInfoProvider = new ApiDetailInfoProvider()
-        }
-        return await detailInfoProvider.getDetailInfosAsync(ctx, rowId, token)
     }
 
     async updateDetailInfoAsync(ctx: Context, token: string): Promise<void> {
@@ -33,6 +37,7 @@ export class DetailInfo {
             rowIdArray.push(rowId)
         })
         let detailInfo = []
+        
         for (let rowId of rowIdArray) {
             detailInfo.push(await detailInfoProvider.getDetailInfosAsync(ctx, rowId, token))
         }
