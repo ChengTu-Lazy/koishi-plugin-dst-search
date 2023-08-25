@@ -17,8 +17,6 @@ export interface Config {
   Interval: number
 }
 
-
-
 export const Config: Schema<Config> = Schema.object({
   DefaultSearchName: Schema.array(String).role('table').default(["漓江塔"]).description('设置默认查询的房间名称(模糊匹配)'),
 
@@ -29,7 +27,7 @@ export const Config: Schema<Config> = Schema.object({
     Schema.const('PSN').description('PlayStation'),
     Schema.const('XBone').description('Xbox'),
   ])).role('table').default(["Steam"]).description('设置默认查询的游戏平台,可以多选,但是多选会拖慢查询速度哦'),
-  
+
   DefaultRgion: Schema.array(Schema.union([
     Schema.const('ap-east-1').description('ap-east-1'),
     Schema.const('us-east-1').description('us-east-1'),
@@ -74,9 +72,9 @@ export async function apply(ctx: Context, config: Config) {
   let regionInfo = new RegionInfo()
   let simpleInfo = new SimpleInfo()
   let detailInfo = new DetailInfo()
-  await regionInfo.updateRegionsAsync(ctx)
-  await simpleInfo.updateSimpleInfosAsync(ctx, config)
-  await detailInfo.updateDetailInfoAsync(ctx, config.Token)
+  await regionInfo.updateRegionsAsync(ctx);
+  await simpleInfo.updateSimpleInfosAsync(ctx, config);
+  await detailInfo.updateDetailInfoAsync(ctx, config.Token);
 
   ctx.command('s-image [flag]', "设置输出的格式是否为图片（1：true,0：false,不输取反）").shortcut(/^\|\| (1|0)$/, { args: ['$1'] }).shortcut(/^\|\|$/, { args: ['$1'] }).action(async (Session, flag) => {
     if (flag == null) {
@@ -102,10 +100,10 @@ export async function apply(ctx: Context, config: Config) {
       let userId = Session.session.userId
       let simpleInfoJson = await simpleInfo.getSimpleInfoAsync(ctx, name, config)
       let send = await simpleInfo.getMessageAsync(ctx, name, config)
-  
+
       //简单查询之后计入数据库,存储后期详细查询需要的rowid
       simpleInfo.setUserSearchInfoAsync(ctx, userId, simpleInfoJson)
-  
+
       if (config.IsSendImage) {
         send = await simpleInfo.getImageAsync(ctx, send)
       }
@@ -136,20 +134,27 @@ export async function apply(ctx: Context, config: Config) {
     }
   })
 
-  //定时更新数据内容,重新配置了默认内容之后得要重启koishi
-  async function doTaskAsync() {
-    await regionInfo.updateRegionsAsync(ctx)
-    await simpleInfo.updateSimpleInfosAsync(ctx, config)
-    await detailInfo.updateDetailInfoAsync(ctx, config.Token)
-  }
+  let isRunning = true; // 标志变量，控制循环的终止条件
 
   async function runAsyncTaskWithInterval(fn, interval) {
-    while (true) {
-      await new Promise(resolve => setTimeout(resolve, interval))
-      await fn()
+    while (isRunning) {
+      await fn();
+      await new Promise(resolve => setTimeout(resolve, interval));
     }
   }
 
-  runAsyncTaskWithInterval(doTaskAsync, config.Interval)
+  ctx.on('ready', () => {
+    runAsyncTaskWithInterval(doTaskAsync, config.Interval);
+  });
 
+  ctx.on('dispose', () => {
+    isRunning = false; // 设置标志变量为 false，停止循环任务
+  });
+
+  // 定时更新数据内容，在重新配置默认内容后需要重启 koishi
+  async function doTaskAsync() {
+    await regionInfo.updateRegionsAsync(ctx);
+    await simpleInfo.updateSimpleInfosAsync(ctx, config);
+    await detailInfo.updateDetailInfoAsync(ctx, config.Token);
+  }
 }
