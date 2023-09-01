@@ -25,6 +25,9 @@ jobs:
       - name: npm  install
         run: npm  install
 
+      - name: npm install koishi 
+        run: npm install koishi
+
       - name: Build
         run: yarn run build
 
