@@ -22,6 +22,9 @@ jobs:
         with:
           node-version: 16
       
+      - name: 查看当前目录
+        run: ls
+
       - name: npm  ci
         run: ls
         run: npm  ci
