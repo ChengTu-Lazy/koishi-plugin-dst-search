@@ -25,9 +25,6 @@ jobs:
       - name: npm  install
         run: npm  install
 
-      - name: npm install koishi koishi-plugin-puppeteer
-        run: npm install koishi koishi-plugin-puppeteer
-
       - name: Build
         run: yarn run build
 
