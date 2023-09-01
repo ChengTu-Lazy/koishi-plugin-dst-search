@@ -22,11 +22,8 @@ jobs:
         with:
           node-version: 16
       
-      - name: npm  install
-        run: npm  install
-
-      - name: npm ci koishi koishi-plugin-puppeteer
-        run: npm ci koishi koishi-plugin-puppeteer
+      - name: npm  ci
+        run: npm  ci
 
       - name: Build
         run: yarn run build
