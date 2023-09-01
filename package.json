@@ -1,7 +1,7 @@
 {
   "name": "koishi-plugin-dst-search",
   "description": "查询饥荒联机服务器(支持图片和文字格式输出)",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
   "files": [
@@ -34,5 +34,8 @@
         "puppeteer"
       ]
     }
+  },
+  "dependencies": {
+
   }
 }
