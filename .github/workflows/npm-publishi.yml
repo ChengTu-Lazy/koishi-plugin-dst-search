@@ -23,6 +23,7 @@ jobs:
           node-version: 16
       
       - name: npm  ci
+        run: ls
         run: npm  ci
 
       - name: Build
