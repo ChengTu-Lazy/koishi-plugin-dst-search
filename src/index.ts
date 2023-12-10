@@ -33,7 +33,7 @@ export const Config: Schema<Config> = Schema.object({
     Schema.const('us-east-1').description('us-east-1'),
     Schema.const('eu-central-1').description('eu-central-1'),
     Schema.const('ap-southeast-1').description('ap-southeast-1'),
-  ])).role('table').default(["ap-east-1"]).description('设置默认查询的游戏地区,中国开服一般都是ap-east-1哦,具体的可以看游戏服务器开服日志,可以多选,但是多选会拖慢查询速度哦'),
+  ])).role('table').default(["ap-east-1","us-east-1",'eu-central-1','ap-southeast-1']).description('设置默认查询的游戏地区,中国开服一般都是ap-east-1哦,具体的可以看游戏服务器开服日志,可以多选,但是多选会拖慢查询速度哦'),
 
   Token: Schema.string().default('pds-g^KU_iC59_53i^ByQO7jK+mAPCqmyfQEo5eONht2EL6pCSKjz+1kFA2fI=').description('详细查询所需要的Token'),
   IsSendImage: Schema.boolean().default(false).description('设置默认发送信息是否为图片格式,开启该功能前请检查puppeteer服务是否正确开启,图画转换功能依赖于此插件！'),
