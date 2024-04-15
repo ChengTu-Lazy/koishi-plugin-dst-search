@@ -46,6 +46,24 @@ export class DatabaseHelper {
   }
 
   async DatabaseInitAsync(ctx: Context, config: Config) {
+    await this.InitTable(ctx);
+    //设置初始默认数据行
+    let DefualtJson = JSON.parse(JSON.stringify({}));
+    try {
+      this.SetInfoByIdAsync(ctx, 1, DefualtJson, "RegionInfo")
+    } catch (error) {
+      ctx.database.drop('dstinfo')
+      await this.InitTable(ctx);
+      this.SetInfoByIdAsync(ctx, 1, DefualtJson, "RegionInfo")
+    }
+    this.SetInfoByIdAsync(ctx, 2, DefualtJson, "SimpleInfo")
+    this.SetInfoByIdAsync(ctx, 3, DefualtJson, "DetailInfo")
+
+    const updateHelper = new UpdateHelper();
+    await updateHelper.UpdateSimpleInfoAsync(ctx, config);
+  }
+
+  async InitTable(ctx: Context){
     //数据表的创建
     ctx.model.extend('dstinfo', {
       // 各字段类型
@@ -56,17 +74,6 @@ export class DatabaseHelper {
       // 使用自增的主键值
       autoInc: true,
     })
-
-    //设置初始默认数据行
-    let DefualtJson = JSON.parse(JSON.stringify(""));
-    this.SetInfoByIdAsync(ctx, 1, DefualtJson, "RegionInfo")
-    this.SetInfoByIdAsync(ctx, 2, DefualtJson, "SimpleInfo")
-    this.SetInfoByIdAsync(ctx, 3, DefualtJson, "DetailInfo")
-
-    const updateHelper = new UpdateHelper();
-    await updateHelper.UpdateSimpleInfoAsync(ctx, config);
   }
-
-
 }
 
