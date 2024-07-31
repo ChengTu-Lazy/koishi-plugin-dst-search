@@ -11,9 +11,9 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "jsxImportSource": "@satorijs/element",
-    "types": [
-      "yml-register/types",
-    ],
-  }
+  },
+  "include": [
+    "src",
+  ],
 }
 
