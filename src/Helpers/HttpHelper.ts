@@ -22,6 +22,40 @@ export class HttpHelper {
     }
   }
 
+  async GetSimpleInfoByPlatformAsync(ctx: Context, config: Config,platform:string) {
+    let result: any[] = []
+    try {
+      for (const region of config.DefaultRgion) {
+        const url = `https://lobby-v2-cdn.klei.com/${region}-${platform}.json.gz`;
+        let response
+        let resultTemp
+        response = await ctx.http.get(url);
+        try {
+          resultTemp = ""
+          resultTemp = response.GET
+            .map((item: any) => ({
+              name: item.name,
+              mode: item.intent,
+              rowId: item.__rowId,
+              season: item.season,
+              maxconnections: item.maxconnections,
+              connected: item.connected,
+              version: item.v,
+              platform: item.platform
+            }));
+        } catch (error) {
+
+        }
+        if (resultTemp.length !== 0) {
+          result.push(...resultTemp);
+        }
+      }
+      return JSON.parse(JSON.stringify(result));
+    } catch (err) {
+      //console.error('Failed to get SimpleInfo');
+    }
+  }
+
   async GetSimpleInfoAsync(ctx: Context, config: Config) {
     let result: any[] = []
     try {
@@ -42,6 +76,7 @@ export class HttpHelper {
                 maxconnections: item.maxconnections,
                 connected: item.connected,
                 version: item.v,
+                platform:item.platform
               }));
           } catch (error) {
 

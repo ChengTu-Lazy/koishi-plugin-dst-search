@@ -1,7 +1,4 @@
-import { Context } from 'koishi'
-import { Config } from '..';
 export class ConverteHelper {
-
   // 将角色英文名转换为中文名的函数
   CharacterToZh(character: string): string {
     const prefabTranslations = {
@@ -41,6 +38,19 @@ export class ConverteHelper {
       '32': 'Switch',
     };
     return platformTranslations[platform] || platform;
+  }
+
+  // 将平台代码转换为平台名称的函数
+  PlatformToNum(platform: string): string {
+    const platformNumTranslations = {
+      //["Steam", "Rail", "PSN", "XBone", "Switch"]
+      'Steam': '1',
+      'Rail': '4',
+      'PSN': '3',
+      'XBone': '19',
+      'Switch': '32',
+    };
+    return platformNumTranslations[platform] || platform;
   }
 
   // 将季节英文转换为中文名的函数

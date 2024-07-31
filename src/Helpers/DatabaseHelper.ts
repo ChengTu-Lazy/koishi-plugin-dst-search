@@ -2,6 +2,7 @@ import { Context } from 'koishi'
 import { Config } from '..';
 import { UpdateHelper } from './UpdateHelper';
 import { SimpleInfoType } from './MessageHelper';
+import { ConverteHelper } from './ConverteHelper';
 export class DatabaseHelper {
 
   async SetUserSearchInfoAsync(ctx: Context, userId: string, json: JSON) {
@@ -28,6 +29,22 @@ export class DatabaseHelper {
     let res = infojsonArr.filter((json) => json.name.includes(name)).slice(0, config.NumberOfRoomsDisplayed);
     return res
   }
+
+  async GetSimpleInfoByNameAndPlatformAsync(ctx: Context, config: Config, name: string, platform: string = 'Steam') {
+    // 从数据库中获取信息
+    const infoArr = await ctx.database.get('dstinfo', { id: 2 });
+    // 将获取的信息转换为JSON数组
+    const infojsonArr = JSON.parse(JSON.stringify(infoArr[0].info));
+    const convertHelper = new ConverteHelper()
+    platform = convertHelper.PlatformToNum(platform)
+    // 根据name和platform进行筛选，并限制结果数量
+    let res = infojsonArr.filter((json) => {
+      return json.name.includes(name) && json.platform.toString() === platform;
+    }).slice(0, config.NumberOfRoomsDisplayed);
+    // 返回筛选结果
+    return res;
+  }
+
 
   async SetInfoByIdAsync(ctx: Context, id: number, value: JSON, name?: string) {
     const info = await ctx.database.get('dstinfo', { id: id });
@@ -63,7 +80,7 @@ export class DatabaseHelper {
     await updateHelper.UpdateSimpleInfoAsync(ctx, config);
   }
 
-  async InitTable(ctx: Context){
+  async InitTable(ctx: Context) {
     //数据表的创建
     ctx.model.extend('dstinfo', {
       // 各字段类型

@@ -2,7 +2,6 @@ import { Context } from "koishi";
 import { HttpHelper } from "./HttpHelper";
 import { DatabaseHelper } from "./DatabaseHelper";
 import { Config } from "..";
-import { log } from "util";
 
 export class UpdateHelper {
 

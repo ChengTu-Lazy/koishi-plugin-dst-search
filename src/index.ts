@@ -1,12 +1,11 @@
-import { Context, Database, Schema, User } from 'koishi'
+import { Context, Schema } from 'koishi'
 import { UpdateHelper } from './Helpers/UpdateHelper'
 import { DatabaseHelper } from './Helpers/DatabaseHelper'
 import { MessageHelper } from './Helpers/MessageHelper'
 import { } from 'koishi-plugin-puppeteer'
+
 export const name = 'dst-search'
-
 export const using = ['database']
-
 export const inject = 'puppeteer'
 
 //配置构型
@@ -14,7 +13,7 @@ export interface Config {
   IsSendImage: boolean
   DefaultPlatform: any
   DefaultRgion: any
-  DefaultSearchName: string[]
+  DefaultSearchName: any
   Token: string
   NumberOfRoomsDisplayed: number
   Authority: number
@@ -23,9 +22,21 @@ export interface Config {
 
 export const Config: Schema<Config> = Schema.object({
   Authority: Schema.number().default(0).description('默认指令权限等级'),
-
-  DefaultSearchName: Schema.array(String).role('table').default(["漓江塔"]).description('设置默认查询的房间名称(模糊匹配)'),
-
+  DefaultSearchName: Schema.array(Schema.object({
+    房间名: Schema.string(),
+    目标群: Schema.string(),
+    平台: Schema.union([
+      Schema.const('Steam').description('Steam'),
+      Schema.const('Rail').description('WeGame'),
+      Schema.const('Switch').description('Switch'),
+      Schema.const('PSN').description('PlayStation'),
+      Schema.const('XBone').description('Xbox'),
+    ]),
+  })).default([{
+    房间名: '漓江塔',
+    目标群: '',
+    平台: "Steam"
+  }]).role('table').description('设置默认查询的房间名称(模糊匹配)、目标群组不填则为任意群组都可以查看'),
   DefaultPlatform: Schema.array(Schema.union([
     Schema.const('Steam').description('Steam'),
     Schema.const('Rail').description('WeGame'),
@@ -71,7 +82,7 @@ export async function apply(ctx: Context, config: Config) {
 
   //数据库初始化
   const databaseHelper = new DatabaseHelper();
-  await databaseHelper.DatabaseInitAsync(ctx,config);
+  await databaseHelper.DatabaseInitAsync(ctx, config);
 
   ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息", { authority: config.Authority }).shortcut(/^查房 (.*)*$/, { args: ['$1'] }).shortcut(/^查房$/, { args: ['$1'] }).action(async (Session, name) => {
     try {
@@ -82,9 +93,11 @@ export async function apply(ctx: Context, config: Config) {
       let send
       if (name == undefined) {
         for (const searchName of config.DefaultSearchName) {
-          const temp = await databaseHelper.GetSimpleInfoByNameAsync(ctx, config, searchName);
+          if (searchName.目标群 != Session.session.guildId && searchName.目标群 != "" && searchName.目标群 != undefined) return;
+          const temp = await databaseHelper.GetSimpleInfoByNameAndPlatformAsync(ctx, config, searchName.房间名, searchName.平台);
           try {
             sendJson = sendJson.concat(temp)
+            console.log(sendJson)
           } catch (e) {
             console.log(e)
           }
@@ -98,7 +111,7 @@ export async function apply(ctx: Context, config: Config) {
       send = await messageHelper.GetMessageAsync(sendJson)
       if (config.IsSendImage) {
         send = await messageHelper.GetImageAsync(ctx, send)
-      } 
+      }
       return send
     } catch (error) {
     }
