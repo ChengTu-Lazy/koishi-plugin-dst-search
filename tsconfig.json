@@ -3,7 +3,7 @@
     "target": "es2022",
     "module": "esnext",
     "declaration": true,
-    "emitDeclarationOnly": true,
+    "emitDeclarationOnly": false,
     "composite": true,
     "incremental": true,
     "skipLibCheck": true,
