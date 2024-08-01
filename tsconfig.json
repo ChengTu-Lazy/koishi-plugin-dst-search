@@ -1,19 +1,16 @@
 {
   "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "lib",
     "target": "es2022",
     "module": "esnext",
     "declaration": true,
-    "emitDeclarationOnly": false,
+    "emitDeclarationOnly": true,
     "composite": true,
     "incremental": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
     "moduleResolution": "bundler",
-    "jsx": "react-jsx",
-    "jsxImportSource": "@satorijs/element",
   },
-  "include": [
-    "src",
-  ],
 }
 
