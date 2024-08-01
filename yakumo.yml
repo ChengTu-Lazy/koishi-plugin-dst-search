@@ -1,0 +1,6 @@
+pipeline:
+  build:
+    - esbuild --outDir lib 
+  clean:
+    - tsc --clean
+

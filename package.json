@@ -4,7 +4,7 @@
   "version": "1.2.11",
   "main": "lib/index.js",
   "typings": "lib/index.d.ts",
-  "browser": true,
+  "browser": {},
   "files": [
     "lib",
     "dist"
@@ -15,7 +15,7 @@
     "url": "git+https://github.com/ChengTu-Lazy/koishi-plugin-dst-search.git"
   },
   "scripts": {
-    "build": "yarn yakumo build"
+    "build": "yakumo build"
   },
   "keywords": [
     "DST",
@@ -28,8 +28,13 @@
     "koishi-plugin-puppeteer": "^3.5.0"
   },
   "devDependencies": {
+    "esbuild": "^0.18.20",
+    "esbuild-register": "npm:@shigma/esbuild-register@^1.1.1",
     "koishi": "^4.13.9",
-    "koishi-plugin-puppeteer": "^3.5.0"
+    "koishi-plugin-puppeteer": "^3.5.0",
+    "typescript": "^5.3.3",
+    "yakumo": "^0.3.13",
+    "yml-register": "^1.2.5"
   },
   "koishi": {
     "description": {

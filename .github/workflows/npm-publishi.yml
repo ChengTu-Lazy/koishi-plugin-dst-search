@@ -29,7 +29,7 @@ jobs:
         run: npm ci koishi koishi-plugin-puppeteer
 
       - name: Build
-        run: npm i -g yakumo
+        run: yarn install
 
       - name: Build
         run: yarn yakumo build
