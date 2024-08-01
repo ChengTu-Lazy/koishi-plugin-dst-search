@@ -1,6 +1,12 @@
-pipeline:
-  build:
-    - esbuild --outDir lib 
-  clean:
-    - tsc --clean
-
+- name: yakumo
+  config:
+    pipeline:
+      build:
+        - tsc
+        - esbuild
+        - client
+      clean:
+        - tsc --clean
+- name: yakumo-esbuild
+- name: yakumo-tsc
+- name: '@koishijs/client/lib'
