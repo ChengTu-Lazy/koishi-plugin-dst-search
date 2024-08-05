@@ -33,7 +33,7 @@ export class ConverteHelper {
       //["Steam", "Rail", "PSN", "XBone", "Switch"]
       '1': 'Steam',
       '4': 'WeGame',
-      '3': 'PlayStation',
+      '2': 'PlayStation',
       '19': 'XBone',
       '32': 'Switch',
     };
@@ -46,7 +46,7 @@ export class ConverteHelper {
       //["Steam", "Rail", "PSN", "XBone", "Switch"]
       'Steam': '1',
       'Rail': '4',
-      'PSN': '3',
+      'PSN': '2',
       'XBone': '19',
       'Switch': '32',
     };
