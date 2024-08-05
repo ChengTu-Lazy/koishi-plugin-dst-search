@@ -79,7 +79,8 @@ export class HttpHelper {
                 platform:item.platform
               }));
           } catch (error) {
-
+            //这里是获取不到信息的平台地区
+            // console.log(region,platform);
           }
           if (resultTemp.length !== 0) {
             result.push(...resultTemp);

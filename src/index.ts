@@ -84,50 +84,68 @@ export async function apply(ctx: Context, config: Config) {
   const databaseHelper = new DatabaseHelper();
   await databaseHelper.DatabaseInitAsync(ctx, config);
 
-  ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息", { authority: config.Authority }).shortcut(/^查房 (.*)*$/, { args: ['$1'] }).shortcut(/^查房$/, { args: ['$1'] }).action(async (Session, name) => {
+  ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息", { authority: config.Authority })
+  .shortcut(/^查房 (.*)*$/, { args: ['$1'] })
+  .shortcut(/^查房$/, { args: ['$1'] })
+  .action(async (Session, name) => {
     try {
-      let userId = Session.session.userId
-      let databaseHelper = new DatabaseHelper();
-      let messageHelper = new MessageHelper();
-      let sendJson: JSON[] = []
-      let send
-      if (name == undefined) {
-        for (const searchName of config.DefaultSearchName) {
-          if (searchName.目标群 != Session.session.guildId && searchName.目标群 != "" && searchName.目标群 != undefined) return;
-          const temp = await databaseHelper.GetSimpleInfoByNameAndPlatformAsync(ctx, config, searchName.房间名, searchName.平台);
-          try {
-            sendJson = sendJson.concat(temp)
-            console.log(sendJson)
-          } catch (e) {
-            console.log(e)
+      const userId = Session.session.userId;
+      const databaseHelper = new DatabaseHelper();
+      const messageHelper = new MessageHelper();
+      const sendJson: JSON[] = [];
+
+      // 获取默认查询的配置
+      const defaultSearchNames = config.DefaultSearchName.filter(searchName => 
+        searchName.目标群 === Session.session.guildId || !searchName.目标群
+      );
+
+      const getInfo = async (roomName: string, platform?: string) => {
+        return platform
+          ? await databaseHelper.GetSimpleInfoByNameAndPlatformAsync(ctx, config, roomName, platform)
+          : await databaseHelper.GetSimpleInfoByNameAsync(ctx, config, roomName);
+      };
+
+      if (name === undefined) {
+        for (const { 房间名, 平台 } of defaultSearchNames) {
+          const result = await getInfo(房间名, 平台);
+          if (result) sendJson.push(...result);
+        }
+      } else {
+        let flag = false;
+        for (const { 房间名, 平台 } of defaultSearchNames) {
+          if (!房间名) {
+            const result = await getInfo(name, 平台);
+            if (result) sendJson.push(...result);
+            flag = true;
           }
         }
+        if (!flag) {
+          const result = await getInfo(name);
+          if (result) sendJson.push(...result);
+        }
       }
-      else {
-        sendJson = await databaseHelper.GetSimpleInfoByNameAsync(ctx, config, name);
-      }
-      //存储用户简单查询的相关数据
-      databaseHelper.SetUserSearchInfoAsync(ctx, userId, JSON.parse(JSON.stringify(sendJson)))
-      send = await messageHelper.GetMessageAsync(sendJson)
+
+      // 存储用户简单查询的相关数据
+      await databaseHelper.SetUserSearchInfoAsync(ctx, userId, JSON.parse(JSON.stringify(sendJson)));
+      let send = await messageHelper.GetMessageAsync(sendJson);
       if (config.IsSendImage) {
-        send = await messageHelper.GetImageAsync(ctx, send)
+        send = await messageHelper.GetImageAsync(ctx, send);
       }
-      return send
+      return send;
     } catch (error) {
+      console.error(error);
     }
-  })
+  });
 
   ctx.command('s-detail [number]', "查询饥荒联机单个服务器详细信息", { authority: config.Authority }).shortcut(/^\.(\d+)$/, { args: ['$1'] }).shortcut(/^\。(\d+)$/, { args: ['$1'] }).action(async (Session, numberStr) => {
     let userId = Session.session.userId
     let index = Number.parseInt(numberStr)
-    let send: any
     try {
       let messageHelper = new MessageHelper()
       let send = await messageHelper.GetDetailInfoAsync(ctx, config, userId, index)
       if (config.IsSendImage) {
         send = await messageHelper.GetImageAsync(ctx, send)
       }
-
       return send
     } catch (error) {
       return "请先查询再选择！"

@@ -8,7 +8,6 @@ export class DatabaseHelper {
   async SetUserSearchInfoAsync(ctx: Context, userId: string, json: JSON) {
     const simpleinfo: SimpleInfoType[] = JSON.parse(JSON.stringify(json));
     const rowIds: string[] = simpleinfo.map(item => item.rowId);
-
     const existingInfo = await ctx.database.get('dstinfo', { name: userId });
     if (existingInfo.length === 0) {
       ctx.database.create('dstinfo', {
