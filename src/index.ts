@@ -5,8 +5,10 @@ import { MessageHelper } from './Helpers/MessageHelper'
 import { } from 'koishi-plugin-puppeteer'
 
 export const name = 'dst-search'
-export const using = ['database']
-export const inject = 'puppeteer'
+export const inject = {
+  required: ['database'],
+  optional: ['puppeteer']
+}
 
 //配置构型
 export interface Config {
@@ -34,7 +36,7 @@ export const Config: Schema<Config> = Schema.object({
     ]),
   })).default([{
     房间名: '漓江塔',
-    目标群: '',
+    目标群: '456906519',
     平台: "Steam"
   }]).role('table').description('设置默认查询的房间名称(模糊匹配)、目标群组不填则为任意群组都可以查看'),
   DefaultPlatform: Schema.array(Schema.union([

@@ -15,7 +15,6 @@ export interface SimpleInfoType {
 
 export class MessageHelper {
 
-
   async GetImageAsync(ctx: Context, str: string) {
     try {
       let res = await ctx.puppeteer.render(
