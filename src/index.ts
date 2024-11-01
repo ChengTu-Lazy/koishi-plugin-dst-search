@@ -78,100 +78,109 @@ class StaticValue {
   static IntervalId; // 标志变量，控制循环的终止条件
 }
 
-
 //插件入口
 export async function apply(ctx: Context, config: Config) {
 
   //数据库初始化
   const databaseHelper = new DatabaseHelper();
-  await databaseHelper.DatabaseInitAsync(ctx, config);
-
-  ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息", { authority: config.Authority })
-  .shortcut(/^查房 (.*)*$/, { args: ['$1'] })
-  .shortcut(/^查房$/, { args: ['$1'] })
-  .action(async (Session, name) => {
-    try {
-      const userId = Session.session.userId;
-      const databaseHelper = new DatabaseHelper();
-      const messageHelper = new MessageHelper();
-      const sendJson: JSON[] = [];
-
-      // 获取默认查询的配置
-      const defaultSearchNames = config.DefaultSearchName.filter(searchName => 
-        searchName.目标群 === Session.session.guildId || !searchName.目标群
-      );
-
-      const getInfo = async (roomName: string, platform?: string) => {
-        return platform
-          ? await databaseHelper.GetSimpleInfoByNameAndPlatformAsync(ctx, config, roomName, platform)
-          : await databaseHelper.GetSimpleInfoByNameAsync(ctx, config, roomName);
-      };
-
-      if (name === undefined) {
-        for (const { 房间名, 平台 } of defaultSearchNames) {
-          const result = await getInfo(房间名, 平台);
-          if (result) sendJson.push(...result);
-        }
-      } else {
-        let flag = false;
-        for (const { 房间名, 平台 } of defaultSearchNames) {
-          if (!房间名) {
-            const result = await getInfo(name, 平台);
-            if (result) sendJson.push(...result);
-            flag = true;
-          }
-        }
-        if (!flag) {
-          const result = await getInfo(name);
-          if (result) sendJson.push(...result);
-        }
-      }
-
-      // 存储用户简单查询的相关数据
-      await databaseHelper.SetUserSearchInfoAsync(ctx, userId, JSON.parse(JSON.stringify(sendJson)));
-      let send = await messageHelper.GetMessageAsync(sendJson);
-      if (config.IsSendImage) {
-        send = await messageHelper.GetImageAsync(ctx, send);
-      }
-      return send;
-    } catch (error) {
-      console.error(error);
-    }
+  databaseHelper.DatabaseInitAsync(ctx, config).then(() => {
+    console.log('Database initialized successfully');
+  }).catch((error) => {
+    console.error('Error initializing database:', error);
   });
 
-  ctx.command('s-detail [number]', "查询饥荒联机单个服务器详细信息", { authority: config.Authority }).shortcut(/^\.(\d+)$/, { args: ['$1'] }).shortcut(/^\。(\d+)$/, { args: ['$1'] }).action(async (Session, numberStr) => {
-    let userId = Session.session.userId
-    let index = Number.parseInt(numberStr)
-    try {
-      let messageHelper = new MessageHelper()
-      let send = await messageHelper.GetDetailInfoAsync(ctx, config, userId, index)
-      if (config.IsSendImage) {
-        send = await messageHelper.GetImageAsync(ctx, send)
-      }
-      return send
-    } catch (error) {
-      return "请先查询再选择！"
-    }
-  })
+  ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息")
+    .shortcut(/^查房 (.*)*$/, { args: ['$1'] })
+    .shortcut(/^查房$/, { args: ['$1'] })
+    .action(async (Session, name) => {
+      try {
+        const userId = Session.session.userId;
+        const databaseHelper = new DatabaseHelper();
+        const messageHelper = new MessageHelper();
+        const sendJson: JSON[] = [];
 
-  ctx.command('s-image [flag]', "设置输出的格式是否为图片（1：true,0：false,不输取反）", { authority: config.Authority }).shortcut(/^\|\| (1|0)$/, { args: ['$1'] }).shortcut(/^\|\|$/, { args: ['$1'] }).action(async (Session, flag) => {
-    if (flag == null) {
-      config.IsSendImage = !config.IsSendImage
-    } else {
-      switch (flag.toString()) {
-        case "0":
-          config.IsSendImage = false
-          break;
-        case "1":
-          config.IsSendImage = true
-          break;
-        default:
-          config.IsSendImage = !config.IsSendImage
-          break;
+        // 获取默认查询的配置
+        const defaultSearchNames = config.DefaultSearchName.filter(searchName =>
+          searchName.目标群 === Session.session.guildId || !searchName.目标群
+        );
+
+        const getInfo = async (roomName: string, platform?: string) => {
+          return platform
+            ? await databaseHelper.GetSimpleInfoByNameAndPlatformAsync(ctx, config, roomName, platform)
+            : await databaseHelper.GetSimpleInfoByNameAsync(ctx, config, roomName);
+        };
+
+        if (name === undefined) {
+          for (const { 房间名, 平台 } of defaultSearchNames) {
+            const result = await getInfo(房间名, 平台);
+            if (result) sendJson.push(...result);
+          }
+        } else {
+          let flag = false;
+          for (const { 房间名, 平台 } of defaultSearchNames) {
+            if (!房间名) {
+              const result = await getInfo(name, 平台);
+              if (result) sendJson.push(...result);
+              flag = true;
+            }
+          }
+          if (!flag) {
+            const result = await getInfo(name);
+            if (result) sendJson.push(...result);
+          }
+        }
+
+        // 存储用户简单查询的相关数据
+        await databaseHelper.SetUserSearchInfoAsync(ctx, userId, JSON.parse(JSON.stringify(sendJson)));
+        let send = await messageHelper.GetMessageAsync(sendJson);
+        if (config.IsSendImage) {
+          send = await messageHelper.GetImageAsync(ctx, send);
+        }
+        return send;
+      } catch (error) {
+        console.error(error);
       }
-    }
-    return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
-  })
+    });
+
+  ctx.command('s-detail [number]', "查询饥荒联机单个服务器详细信息")
+    .shortcut(/^\.(\d+)$/, { args: ['$1'] })
+    .shortcut(/^\。(\d+)$/, { args: ['$1'] })
+    .action(async (Session, numberStr) => {
+      let userId = Session.session.userId
+      let index = Number.parseInt(numberStr)
+      try {
+        let messageHelper = new MessageHelper()
+        let send = await messageHelper.GetDetailInfoAsync(ctx, config, userId, index)
+        if (config.IsSendImage) {
+          send = await messageHelper.GetImageAsync(ctx, send)
+        }
+        return send
+      } catch (error) {
+        return "请先查询再选择！"
+      }
+    })
+
+  ctx.command('s-image [flag]', "设置输出的格式是否为图片（1：true,0：false,不输取反）")
+    .shortcut(/^\|\| (1|0)$/, { args: ['$1'] })
+    .shortcut(/^\|\|$/, { args: ['$1'] })
+    .action(flag => {
+      if (flag == null) {
+        config.IsSendImage = !config.IsSendImage
+      } else {
+        switch (flag.toString()) {
+          case "0":
+            config.IsSendImage = false
+            break;
+          case "1":
+            config.IsSendImage = true
+            break;
+          default:
+            config.IsSendImage = !config.IsSendImage
+            break;
+        }
+      }
+      return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
+    })
 
 
   ctx.on('ready', async () => {
