@@ -2,6 +2,7 @@ import { Context } from 'koishi'
 import { Config } from '..';
 import { ConverteHelper } from './ConverteHelper';
 import { HttpHelper } from './HttpHelper';
+import { DatabaseHelper } from './DatabaseHelper';
 
 export interface SimpleInfoType {
   name: string;
@@ -15,9 +16,16 @@ export interface SimpleInfoType {
 
 export class MessageHelper {
 
-  async GetImageAsync(ctx: Context, str: string) {
+  ctx: Context
+  config: Config
+  constructor(ctx: Context, config: Config) {
+    this.ctx = ctx;
+    this.config = config;
+  }
+
+  async GetImageAsync(str: string) {
     try {
-      let res = await ctx.puppeteer.render(
+      let res = await this.ctx.puppeteer.render(
         `
             <!DOCTYPE html>
             <html lang="en">
@@ -45,7 +53,8 @@ export class MessageHelper {
     }
   }
 
-  async GetMessageAsync(jsonStr: JSON[]): Promise<string> {
+  // 获取房间简单信息
+  async GetSimpleMsgAsync(jsonStr: JSON[]): Promise<string> {
     if (JSON.stringify(jsonStr) !== "[]") {
       const simpleinfo: SimpleInfoType[] = JSON.parse(JSON.stringify(jsonStr));
       const output = simpleinfo.map((item, index) => {
@@ -62,11 +71,12 @@ export class MessageHelper {
     }
   }
 
-  async GetDetailInfoAsync(ctx: Context, config: Config, userId: string, index: number) {
+  // 获取房间详细信息
+  async GetDetailInfoAsync(userId: string, index: number) {
     try {
-      let rowIdArray = (await ctx.database.get('dstinfo', { name: userId }))[0].info
+      let rowIdArray = (await this.ctx.database.get('dstinfo', { name: userId }))[0].info
       let length = JSON.parse(JSON.stringify(rowIdArray)).length
-      let httpHelper = new HttpHelper()
+      let httpHelper = new HttpHelper(this.ctx, this.config)
       if (length == 0) {
         return "请先查询服务器"
       }
@@ -74,7 +84,7 @@ export class MessageHelper {
         return `不在可选范围，当前可查${length}个服务器"`
       }
       let rowId = rowIdArray[index - 1]
-      let detailInfoJson = await httpHelper.GetDetailInfoAsync(ctx, config, rowId)
+      let detailInfoJson = await httpHelper.GetDetailInfoAsync(rowId)
       let send = await this.ProcessDetailInfoAsync(detailInfoJson)
       return send
     } catch (error) {
@@ -149,17 +159,33 @@ export class MessageHelper {
     return result;
   }
 
-  ParsePlayersData(dataStr: string) {
-    // 去掉字符串中的 return 关键字
-    dataStr = dataStr.replace(/return\s+/, '');
-    // 匹配第一个左大括号和最后一个右大括号之间的内容，并将其替换为方括号
-    const jsonStr = dataStr.replace(/^[^{]*{([\s\S]*)}[^}]*$/, '[$1]');
-    // 将属性名替换成双引号包裹的字符串
-    const jsonStrWithQuotes = jsonStr.replace(/(\w+)\s*=/g, '"$1":');
-    // 将单引号替换成双引号
-    const jsonString = jsonStrWithQuotes.replace(/'/g, '"');
-    // 返回解析后的 JSON 数组
-    return JSON.parse(jsonString);
+  //解析玩家数据
+  ParsePlayersData(luaStr: string) {
+    // 去掉开头和结尾的 `return {` 和 `}`
+    luaStr = luaStr.trim().replace(/^return\s*\{/, "").replace(/\}$/, "").trim();
+
+    // 替换等号为冒号，并在属性和字符串值上加上双引号
+    luaStr = luaStr.replace(/(\w+)\s*=\s*("[^"]*"|\d+)/g, '"$1": $2');
+
+    // 处理属性值为字符串的情况，例如 `name="<size=\"71\">做菜新手嘎嘎</size>"`
+    luaStr = luaStr.replace(/"([^"]*)":\s*"([^"]*)"/g, (_, key, value) => {
+      const formattedValue = value.replace(/\\"/g, '"'); // 保留字符串中的双引号
+      return `"${key}": "${formattedValue}"`;
+    });
+
+    // 去掉属性名中的方括号
+    luaStr = luaStr.replace(/\["(\w+)"\]\=/g, '"$1"\:');
+
+    let result = `[${luaStr}]`;
+    // 转换为 JSON 对象数组
+    try {
+      const jsonArray = JSON.parse(result);
+      return Array.isArray(jsonArray) ? jsonArray : [jsonArray];
+    } catch (error) {
+      console.log(result);
+      console.error("Error parsing JSON:", error);
+      return [];
+    }
   }
 
   GetModList(data: string[]): string {
@@ -183,6 +209,42 @@ export class MessageHelper {
     const regex = /day=(\d+),\s*dayselapsedinseason=(\d+),\s*daysleftinseason=(\d+)/;
     const match = dataStr.match(regex);
     return match
+  }
+
+  async GetSendJson(name: string, session): Promise<JSON[]> {
+    const sendJson: JSON[] = [];
+    const databaseHelper = new DatabaseHelper(this.ctx, this.config);
+
+    // 获取默认查询的配置
+    const defaultSearchNames = this.config.DefaultSearchName.filter(searchName =>
+      searchName.目标群 === session.guildId || !searchName.目标群
+    );
+    const getInfo = async (roomName: string, platform?: string) => {
+      return platform
+        ? await databaseHelper.GetSimpleInfoByNameAndPlatformAsync(roomName, platform)
+        : await databaseHelper.GetSimpleInfoByNameAsync(roomName);
+    };
+
+    if (name === undefined) {
+      for (const { 房间名, 平台 } of defaultSearchNames) {
+        const result = await getInfo(房间名, 平台);
+        if (result) sendJson.push(...result);
+      }
+    } else {
+      let flag = false;
+      for (const { 房间名, 平台 } of defaultSearchNames) {
+        if (!房间名) {
+          const result = await getInfo(name, 平台);
+          if (result) sendJson.push(...result);
+          flag = true;
+        }
+      }
+      if (!flag) {
+        const result = await getInfo(name);
+        if (result) sendJson.push(...result);
+      }
+    }
+    return sendJson;
   }
 
 }

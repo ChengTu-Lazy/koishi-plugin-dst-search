@@ -3,9 +3,16 @@ import { Config } from '..';
 
 export class HttpHelper {
 
-  async GetRegionAsync(ctx: Context) {
+  ctx: Context
+  config: Config
+  constructor(ctx: Context, config: Config) {
+    this.ctx = ctx;
+    this.config = config;
+  }
+
+  async GetRegionAsync() {
     try {
-      const result = await ctx.http.get('https://lobby-v2-cdn.klei.com/regioncapabilities-v2.json');
+      const result = await this.ctx.http.get('https://lobby-v2-cdn.klei.com/regioncapabilities-v2.json');
       const regions = result.LobbyRegions.map((x: { Region: string }) => x.Region);
       regions.sort((a: string, b: string) => {
         if (a === 'ap-east-1') {
@@ -22,14 +29,14 @@ export class HttpHelper {
     }
   }
 
-  async GetSimpleInfoByPlatformAsync(ctx: Context, config: Config,platform:string) {
+  async GetSimpleInfoByPlatformAsync(platform: string) {
     let result: any[] = []
     try {
-      for (const region of config.DefaultRgion) {
+      for (const region of this.config.DefaultRgion) {
         const url = `https://lobby-v2-cdn.klei.com/${region}-${platform}.json.gz`;
         let response
         let resultTemp
-        response = await ctx.http.get(url);
+        response = await this.ctx.http.get(url);
         try {
           resultTemp = ""
           resultTemp = response.GET
@@ -56,15 +63,15 @@ export class HttpHelper {
     }
   }
 
-  async GetSimpleInfoAsync(ctx: Context, config: Config) {
+  async GetSimpleInfoAsync() {
     let result: any[] = []
     try {
-      for (const region of config.DefaultRgion) {
-        for (const platform of config.DefaultPlatform) {
+      for (const region of this.config.DefaultRgion) {
+        for (const platform of this.config.DefaultPlatform) {
           const url = `https://lobby-v2-cdn.klei.com/${region}-${platform}.json.gz`;
           let response
           let resultTemp
-          response = await ctx.http.get(url);
+          response = await this.ctx.http.get(url);
           try {
             resultTemp = ""
             resultTemp = response.GET
@@ -76,7 +83,7 @@ export class HttpHelper {
                 maxconnections: item.maxconnections,
                 connected: item.connected,
                 version: item.v,
-                platform:item.platform
+                platform: item.platform
               }));
           } catch (error) {
             //这里是获取不到信息的平台地区
@@ -93,16 +100,17 @@ export class HttpHelper {
     }
   }
 
-  async GetDetailInfoAsync(ctx: Context, config: Config, rowId: string) {
-    for (const region of config.DefaultRgion) {
+  async GetDetailInfoAsync(rowId: string) {
+    for (const region of this.config.DefaultRgion) {
       const url = `https://lobby-v2-${region}.klei.com/lobby/read`;
       try {
-        const response = await ctx.http.post(url, {
-          "__token": `${config.Token}`,
+        const response = await this.ctx.http.post(url, {
+          "__token": `${this.config.Token}`,
           "__gameId": "DST",
           "Query": {
             "__rowId": `${rowId}`
-          }
+          },
+          timeout: 20000
         });
         return (response.GET)[0]
       } catch (error) {
