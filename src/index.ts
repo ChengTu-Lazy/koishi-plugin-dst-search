@@ -129,6 +129,7 @@ export async function apply(ctx: Context, config: Config) {
         if (config.IsSendImage) {
           send = await messageHelper.GetImageAsync(send);
         }
+        send =  send.replace('"',"&quot;").replace("&","&amp;").replace("<"," &lt;").replace(">","&gt;")
         return send;
       } catch (error) {
         console.error(error);
@@ -147,6 +148,7 @@ export async function apply(ctx: Context, config: Config) {
         if (config.IsSendImage) {
           send = await messageHelper.GetImageAsync(send)
         }
+        send =  send.replace('"',"&quot;").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
         return send
       } catch (error) {
         return "请先查询再选择！"
