@@ -178,8 +178,9 @@ export async function apply(ctx: Context, config: Config) {
 
     ctx.command('s-control [roomNum] [command]', "控制房间，指令自定义")
     .alias("控房")
-    .action((Session,roomNum,command) => {
-      let userId = Session.session.userId
+    .action((Session, roomNum, command) => {
+      const session = Session.session;
+      const userId = session.userId;
       const user = config.WSSUserList[Number(roomNum)-1];
 
       if (!user) {
@@ -197,7 +198,7 @@ export async function apply(ctx: Context, config: Config) {
       if(commandInconfig){
         command = commandInconfig.指令;
       }
-      WSS.SendToClient(user.Token,command);
+      WSS.SendToClient(session, command);
     })
 
   //#endregion

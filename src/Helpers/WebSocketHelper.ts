@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { Context, Logger } from 'koishi';
+import { Context, Logger, Session } from 'koishi';
 import { Config } from '..';
 import { parse } from 'url';
 
@@ -10,6 +10,7 @@ export class WebsocketServer {
     ctx: Context
     config: Config
     logger: Logger
+    sessions: Map<string, Session>
     constructor(ctx: Context, config: Config, logger: Logger) {
         this.ctx = ctx;
         this.config = config;
@@ -52,7 +53,11 @@ export class WebsocketServer {
             // 监听消息事件
             ws.on('message', (message) => {
                 this.logger.info(`用户 ${user['允许操作的用户']} 服务器 收到消息: ${message} `);
-                
+                // 获取对应的session并回复消息
+                const session = this.sessions.get(token);
+                if (session) {
+                    session.send(message.toString());
+                }
                 // 向客户端发送回复
                 ws.send(`服务端已收到: ${message}`);
             });
@@ -69,16 +74,23 @@ export class WebsocketServer {
         });
     }
 
-    // 发送消息给指定用户
-    SendToClient(token: string, message: string): boolean {
-        const client = this.clients[token];
-        const user = this.config.WSSUserList.find(user => user.Token === token);
-        if (client && client.readyState === WebSocket.OPEN) {
-            client.send(message);
-            this.logger.info(`用户 ${user['允许操作的用户']} 向服务器发送消息: ${message} `);
-            return true;
+    // 发送消息给指定连接服务器
+    public SendToClient(session: Session, message: string) {
+        // 找到对应用户的token
+        const user = this.config.WSSUserList.find(user => user.允许操作的用户 === session.userId);
+        if (!user) {
+            this.logger.warn(`未找到用户 ${session.userId} 的WebSocket配置`);
+            return;
         }
-        return false; // 用户未连接或连接已关闭
+
+        const client = this.clients[user.Token];
+        if (client?.readyState === WebSocket.OPEN) {
+            client.send(message);
+            this.logger.info(`已发送消息给用户 ${session.userId}: ${message}`);
+            this.sessions.set(user.Token, session);
+        } else {
+            this.logger.warn(`用户 ${session.userId} 的WebSocket连接未建立或已断开`);
+        }
     }
 
     CloseServer() {
