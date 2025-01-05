@@ -52,7 +52,7 @@ export class WebsocketServer {
             // 监听消息事件
             ws.on('message', (message) => {
                 this.logger.info(`用户 ${user['允许操作的用户']} 服务器 收到消息: ${message} `);
-
+                
                 // 向客户端发送回复
                 ws.send(`服务端已收到: ${message}`);
             });

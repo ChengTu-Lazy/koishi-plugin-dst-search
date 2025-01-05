@@ -4,7 +4,7 @@ import { DatabaseHelper } from './Helpers/DatabaseHelper'
 import { MessageHelper } from './Helpers/MessageHelper'
 import { Timer } from './Helpers/Timer'
 import { } from 'koishi-plugin-puppeteer'
-import { WebsocketServer } from './Models/WebSocketHelper'
+import { WebsocketServer } from './Helpers/WebSocketHelper'
 
 
 //#region 参数设置
@@ -66,7 +66,7 @@ export const Config: Schema<Config> = Schema.object({
   WSSUserList: Schema.array(Schema.object({
     允许操作的用户: Schema.string(),
     Token: Schema.string(),
-    连接状态: Schema.boolean().hidden(),
+    连接状态: Schema.boolean().default(false).hidden(),
   })).default([]).role('table').description('设置ws链接token和可以使用websocket的用户'),
   CommandAlias: Schema.array(Schema.object({
     代称: Schema.string(),
@@ -176,24 +176,23 @@ export async function apply(ctx: Context, config: Config) {
       return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
     })
 
-    ctx.command('s-control [roomNum] [command]', "设置输出的格式是否为图片（1：true,0：false,不输取反）")
+    ctx.command('s-control [roomNum] [command]', "控制房间，指令自定义")
     .alias("控房")
     .action((Session,roomNum,command) => {
       let userId = Session.session.userId
       const user = config.WSSUserList[Number(roomNum)-1];
+
       if (!user) {
         return ` 要控制的 ${roomNum}号房间不存在`;
       }
       if (userId !== user.允许操作的用户) {
         return `你没有权限控制 ${roomNum}号房间`;
       }
-      console.log(user.连接状态);
       
       if (user.连接状态 === false) {
         return `${roomNum}号房间未连接`;
       }
-      let commandInconfig = config.CommandAlias.find((item:any)=>item.代称 === command);
-      console.log(commandInconfig);
+      let commandInconfig = config.CommandAlias.find((item:any)=>item.代称 === command);  
       
       if(commandInconfig){
         command = commandInconfig.指令;
