@@ -1,9 +1,11 @@
-import { Context, Schema } from 'koishi'
+import { Context, Logger, Schema } from 'koishi'
 import { UpdateHelper } from './Helpers/UpdateHelper'
 import { DatabaseHelper } from './Helpers/DatabaseHelper'
 import { MessageHelper } from './Helpers/MessageHelper'
 import { Timer } from './Helpers/Timer'
 import { } from 'koishi-plugin-puppeteer'
+import { WebsocketServer } from './Helpers/WebSocketHelper'
+
 
 //#region 参数设置
 export const name = 'dst-search'
@@ -20,6 +22,9 @@ export interface Config {
   Token: string
   NumberOfRoomsDisplayed: number
   Interval: number
+  WSSPort: number
+  WSSUserList: any
+  CommandAlias: any
 }
 
 export const Config: Schema<Config> = Schema.object({
@@ -57,6 +62,23 @@ export const Config: Schema<Config> = Schema.object({
   Token: Schema.string().default('pds-g^KU_iC59_53i^ByQO7jK+mAPCqmyfQEo5eONht2EL6pCSKjz+1kFA2fI=').description('详细查询所需要的Token'),
   IsSendImage: Schema.boolean().default(false).description('设置默认发送信息是否为图片格式,开启该功能前请检查puppeteer服务是否正确开启,图画转换功能依赖于此插件！'),
   Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔(ms)'),
+  WSSPort: Schema.number().default(12000).description('默认websocketServer端口'),
+  WSSUserList: Schema.array(Schema.object({
+    允许操作的用户: Schema.string(),
+    Token: Schema.string(),
+    连接状态: Schema.boolean().default(false).hidden(),
+  })).default([]).role('table').description('设置ws链接token和可以使用websocket的用户'),
+  CommandAlias: Schema.array(Schema.object({
+    代称: Schema.string(),
+    指令: Schema.string(),
+  })).default([{
+    代称: "1",
+    指令: "开服",
+  },
+  {
+    代称: "2",
+    指令: "关服",
+  }]).role('table').description('使用指令别名来执行指令(这里的指令是直接发送给服务器的内容)'),
   IsDebuging: Schema.boolean().default(false).description('设置默认是为调试模式'),
 })
 
@@ -67,24 +89,27 @@ export async function apply(ctx: Context, config: Config) {
   const messageHelper = new MessageHelper(ctx, config)
   const databaseHelper = new DatabaseHelper(ctx, config);
   const timer = new Timer(ctx, config);
-
+  const logger =  new Logger(name)
   //#region 初始化
 
   databaseHelper.DatabaseInitAsync().then(() => {
-    ctx.logger('Database initialized successfully');
+    logger.info('数据库初始化成功');
   }).catch((error) => {
-    ctx.logger('Error initializing database!!!');
+    logger.error('数据库初始化错误');
   });
 
   //#endregion
 
+  const WSS = new WebsocketServer(ctx, config,logger);
   //#region 事件
-  
+
   ctx.on('ready', async () => {
+    WSS.CreatServer(config);
     timer.Task1 = setInterval(() => timer.doTaskAsync(UpdateHelper.prototype.UpdateSimpleInfoAsync), config.Interval);
   });
 
   ctx.on('dispose', () => {
+    WSS.CloseServer()
     clearInterval(timer.Task1);
   });
 
@@ -104,6 +129,7 @@ export async function apply(ctx: Context, config: Config) {
         if (config.IsSendImage) {
           send = await messageHelper.GetImageAsync(send);
         }
+        send =  send.replace('"',"&quot;").replace("&","&amp;").replace("<"," &lt;").replace(">","&gt;")
         return send;
       } catch (error) {
         console.error(error);
@@ -122,6 +148,7 @@ export async function apply(ctx: Context, config: Config) {
         if (config.IsSendImage) {
           send = await messageHelper.GetImageAsync(send)
         }
+        send =  send.replace('"',"&quot;").replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
         return send
       } catch (error) {
         return "请先查询再选择！"
@@ -147,6 +174,31 @@ export async function apply(ctx: Context, config: Config) {
         }
       }
       return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
+    })
+
+    ctx.command('s-control [roomNum] [command]', "控制房间，指令自定义")
+    .alias("控房")
+    .action((Session, roomNum, command) => {
+      const session = Session.session;
+      const userId = session.userId;
+      const user = config.WSSUserList[Number(roomNum)-1];
+
+      if (!user) {
+        return ` 要控制的 ${roomNum}号房间不存在`;
+      }
+      if (userId !== user.允许操作的用户) {
+        return `你没有权限控制 ${roomNum}号房间`;
+      }
+      
+      if (user.连接状态 === false) {
+        return `${roomNum}号房间未连接`;
+      }
+      let commandInconfig = config.CommandAlias.find((item:any)=>item.代称 === command);  
+      
+      if(commandInconfig){
+        command = commandInconfig.指令;
+      }
+      WSS.SendToClient(session, command);
     })
 
   //#endregion
