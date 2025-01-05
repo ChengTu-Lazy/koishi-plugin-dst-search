@@ -16,6 +16,7 @@ export class WebsocketServer {
         this.config = config;
         this.logger = logger;
         this.clients = new Map<string, WebSocket>();
+        this.sessions = new Map<string, Session>();
     }
 
     CreatServer(config: Config) {
@@ -44,7 +45,7 @@ export class WebsocketServer {
             }
 
             // 添加客户端到Map
-            this.clients[token] = ws;
+            this.clients.set(token, ws);
 
             this.logger.info(`用户 ${user['允许操作的用户']} 服务器 已连接`);
             user.连接状态 = true;
@@ -83,7 +84,7 @@ export class WebsocketServer {
             return;
         }
 
-        const client = this.clients[user.Token];
+        const client = this.clients.get(user.Token);
         if (client?.readyState === WebSocket.OPEN) {
             client.send(message);
             this.logger.info(`已发送消息给用户 ${session.userId}: ${message}`);
