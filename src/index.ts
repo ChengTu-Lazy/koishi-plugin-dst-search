@@ -1,4 +1,4 @@
-import { Context, Logger, Schema } from 'koishi'
+import { Context, h, Logger, Schema } from 'koishi'
 import { UpdateHelper } from './Helpers/UpdateHelper'
 import { DatabaseHelper } from './Helpers/DatabaseHelper'
 import { MessageHelper } from './Helpers/MessageHelper'
@@ -89,7 +89,7 @@ export async function apply(ctx: Context, config: Config) {
   const messageHelper = new MessageHelper(ctx, config)
   const databaseHelper = new DatabaseHelper(ctx, config);
   const timer = new Timer(ctx, config);
-  const logger =  new Logger(name)
+  const logger = new Logger(name)
   //#region 初始化
 
   databaseHelper.DatabaseInitAsync().then(() => {
@@ -100,7 +100,7 @@ export async function apply(ctx: Context, config: Config) {
 
   //#endregion
 
-  const WSS = new WebsocketServer(ctx, config,logger);
+  const WSS = new WebsocketServer(ctx, config, logger);
   //#region 事件
 
   ctx.on('ready', async () => {
@@ -129,8 +129,7 @@ export async function apply(ctx: Context, config: Config) {
         if (config.IsSendImage) {
           send = await messageHelper.GetImageAsync(send);
         }
-        send =  send.replace("<"," &lt;").replace(">","&gt;")
-        return send;
+        Session.session.send(h('', send));
       } catch (error) {
         console.error(error);
         return "请等待插件加载"
@@ -148,8 +147,7 @@ export async function apply(ctx: Context, config: Config) {
         if (config.IsSendImage) {
           send = await messageHelper.GetImageAsync(send)
         }
-        send =  send.replace("<","&lt;").replace(">","&gt;")
-        return send
+        Session.session.send(h('', send));
       } catch (error) {
         return "请先查询再选择！"
       }
@@ -176,12 +174,12 @@ export async function apply(ctx: Context, config: Config) {
       return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
     })
 
-    ctx.command('s-control [roomNum] [command]', "控制房间，指令自定义")
+  ctx.command('s-control [roomNum] [command]', "控制房间，指令自定义")
     .alias("控房")
     .action((Session, roomNum, command) => {
       const session = Session.session;
       const userId = session.userId;
-      const user = config.WSSUserList[Number(roomNum)-1];
+      const user = config.WSSUserList[Number(roomNum) - 1];
 
       if (!user) {
         return ` 要控制的 ${roomNum}号房间不存在`;
@@ -189,13 +187,13 @@ export async function apply(ctx: Context, config: Config) {
       if (userId !== user.允许操作的用户) {
         return `你没有权限控制 ${roomNum}号房间`;
       }
-      
+
       if (user.连接状态 === false) {
         return `${roomNum}号房间未连接`;
       }
-      let commandInconfig = config.CommandAlias.find((item:any)=>item.代称 === command);  
-      
-      if(commandInconfig){
+      let commandInconfig = config.CommandAlias.find((item: any) => item.代称 === command);
+
+      if (commandInconfig) {
         command = commandInconfig.指令;
       }
       WSS.SendToClient(session, command);
