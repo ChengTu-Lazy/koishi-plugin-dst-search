@@ -174,7 +174,7 @@ export async function apply(ctx: Context, config: Config) {
       return `查房格式切换成功,当前为${config.IsSendImage ? "图片输出模式！" : "文字输出模式！"}`
     })
 
-  ctx.command('s-control [roomNum] [command]', "控制房间，指令自定义")
+  ctx.command('s-control [roomNum] [command:text]', "控制房间，指令自定义")
     .alias("控房")
     .action((Session, roomNum, command) => {
       const session = Session.session;
