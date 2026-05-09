@@ -1,11 +1,11 @@
-import WebSocket from 'ws';
+import WebSocket, { WebSocketServer as WSServer } from 'ws';
 import { Context, Logger, Session } from 'koishi';
 import { Config } from '..';
 import { parse } from 'url';
 
 
 export class WebsocketServer {
-    Instance: WebSocket.Server;
+    Instance: WSServer;
     private clients: Map<string, WebSocket>; // 用户ID与连接的映射
     ctx: Context
     config: Config
@@ -22,7 +22,7 @@ export class WebsocketServer {
     CreatServer(config: Config) {
         try {
             // 创建WebSocket服务器并绑定到HTTP服务器
-            this.Instance = new WebSocket.Server({ port: config.WSSPort });
+            this.Instance = new WSServer({ port: config.WSSPort });
         } catch (error) {
             this.logger.error('WebSocket 服务器启动失败: %s', error);
             return;
@@ -76,19 +76,12 @@ export class WebsocketServer {
     }
 
     // 发送消息给指定连接服务器
-    public SendToClient(session: Session, message: string) {
-        // 找到对应用户的token
-        const user = this.config.WSSUserList.find(user => user.允许操作的用户 === session.userId);
-        if (!user) {
-            this.logger.warn(`未找到用户 ${session.userId} 的WebSocket配置`);
-            return;
-        }
-
-        const client = this.clients.get(user.Token);
+    public SendToClient(session: Session, token: string, message: string) {
+        const client = this.clients.get(token);
         if (client?.readyState === WebSocket.OPEN) {
             client.send(message);
             this.logger.info(`已发送消息给用户 ${session.userId}: ${message}`);
-            this.sessions.set(user.Token, session);
+            this.sessions.set(token, session);
         } else {
             this.logger.warn(`用户 ${session.userId} 的WebSocket连接未建立或已断开`);
         }

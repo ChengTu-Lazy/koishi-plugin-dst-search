@@ -196,7 +196,7 @@ export async function apply(ctx: Context, config: Config) {
       if (commandInconfig) {
         command = commandInconfig.指令;
       }
-      WSS.SendToClient(session, command);
+      WSS.SendToClient(session, user.Token, command);
     })
 
   //#endregion
