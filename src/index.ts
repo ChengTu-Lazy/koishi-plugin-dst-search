@@ -64,6 +64,7 @@ export const Config: Schema<Config> = Schema.object({
   Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔(ms)'),
   WSSPort: Schema.number().default(12000).description('默认websocketServer端口'),
   WSSUserList: Schema.array(Schema.object({
+    名称: Schema.string().default('').description('控制时使用的服务器名称，例如 本地、云服'),
     允许操作的用户: Schema.string(),
     Token: Schema.string(),
     连接状态: Schema.boolean().default(false).hidden(),
@@ -179,17 +180,17 @@ export async function apply(ctx: Context, config: Config) {
     .action((Session, roomNum, command) => {
       const session = Session.session;
       const userId = session.userId;
-      const user = config.WSSUserList[Number(roomNum) - 1];
+      const user = resolveWSSUser(config.WSSUserList, roomNum);
 
       if (!user) {
-        return ` 要控制的 ${roomNum}号房间不存在`;
+        return `要控制的 ${roomNum} 服务器不存在`;
       }
       if (userId !== user.允许操作的用户) {
-        return `你没有权限控制 ${roomNum}号房间`;
+        return `你没有权限控制 ${roomNum} 服务器`;
       }
 
       if (user.连接状态 === false) {
-        return `${roomNum}号房间未连接`;
+        return `${roomNum} 服务器未连接`;
       }
       let commandInconfig = config.CommandAlias.find((item: any) => item.代称 === command);
 
@@ -201,4 +202,19 @@ export async function apply(ctx: Context, config: Config) {
 
   //#endregion
 
+}
+
+function resolveWSSUser(list: any[] = [], target: any) {
+  const text = target?.toString().trim();
+  if (!text) return null;
+
+  if (/^\d+$/.test(text)) {
+    return list[Number(text) - 1];
+  }
+
+  return list.find((user: any) => {
+    return [user.名称, user.别名, user.服务器名].some((value) => {
+      return value?.toString().trim() === text;
+    });
+  });
 }
