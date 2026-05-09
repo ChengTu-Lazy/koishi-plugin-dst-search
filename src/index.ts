@@ -24,6 +24,7 @@ export interface Config {
   Interval: number
   WSSPort: number
   WSSUserList: any
+  ControlTargetAlias: any
   CommandAlias: any
 }
 
@@ -69,6 +70,11 @@ export const Config: Schema<Config> = Schema.object({
     Token: Schema.string(),
     连接状态: Schema.boolean().default(false).hidden(),
   })).default([]).role('table').description('设置ws链接token和可以使用websocket的用户'),
+  ControlTargetAlias: Schema.array(Schema.object({
+    代称: Schema.string().description('控房第二个参数，例如 本地2、rdcj'),
+    服务器: Schema.string().description('对应 WSSUserList 的序号或名称，例如 1、本地'),
+    存档: Schema.string().default('').description('可选，对应 Go 客户端的存档名或存档别名，例如 Cluster_2、二服、rdcj'),
+  })).default([]).role('table').description('控制目标别名。配置后可使用“控房 本地2 查进程”，插件会自动选择服务器并补上存档参数'),
   CommandAlias: Schema.array(Schema.object({
     代称: Schema.string(),
     指令: Schema.string(),
@@ -180,28 +186,46 @@ export async function apply(ctx: Context, config: Config) {
     .action((Session, roomNum, command) => {
       const session = Session.session;
       const userId = session.userId;
-      const user = resolveWSSUser(config.WSSUserList, roomNum);
+      const target = resolveControlTarget(config.ControlTargetAlias, roomNum);
+      const serverTarget = target?.服务器 || roomNum;
+      const clusterTarget = target?.存档?.toString().trim();
+      const user = resolveWSSUser(config.WSSUserList, serverTarget);
 
       if (!user) {
-        return `要控制的 ${roomNum} 服务器不存在`;
+        return `要控制的 ${serverTarget} 服务器不存在`;
       }
       if (userId !== user.允许操作的用户) {
-        return `你没有权限控制 ${roomNum} 服务器`;
+        return `你没有权限控制 ${serverTarget} 服务器`;
       }
 
       if (user.连接状态 === false) {
-        return `${roomNum} 服务器未连接`;
+        return `${serverTarget} 服务器未连接`;
+      }
+      if (!command?.trim()) {
+        return '请输入要执行的控制指令';
       }
       let commandInconfig = config.CommandAlias.find((item: any) => item.代称 === command);
 
       if (commandInconfig) {
         command = commandInconfig.指令;
       }
+      if (clusterTarget) {
+        command = `${clusterTarget} ${command}`;
+      }
       WSS.SendToClient(session, user.Token, command);
     })
 
   //#endregion
 
+}
+
+function resolveControlTarget(list: any[] = [], target: any) {
+  const text = target?.toString().trim();
+  if (!text) return null;
+
+  return list.find((item: any) => {
+    return item.代称?.toString().trim() === text;
+  });
 }
 
 function resolveWSSUser(list: any[] = [], target: any) {
