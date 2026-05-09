@@ -27,7 +27,7 @@
     "koishi": "^4.13.9"
   },
   "devDependencies": {
-    "esbuild": "^0.18.20",
+    "esbuild": "^0.28.0",
     "esbuild-register": "npm:@shigma/esbuild-register@^1.1.1",
     "koishi": "^4.13.9",
     "koishi-plugin-puppeteer": "^3.5.0",
