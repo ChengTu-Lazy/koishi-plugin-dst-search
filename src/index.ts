@@ -28,6 +28,24 @@ export interface Config {
   CommandAlias: any
 }
 
+const defaultCommandAliasNames = [
+  '查进程',
+  '玩家列表',
+  '开服',
+  '关服',
+  '回档1',
+  '回档2',
+  '回档3',
+  '回档4',
+  '回档5',
+  '存档列表',
+]
+
+const defaultCommandAliases = defaultCommandAliasNames.map((command) => ({
+  代称: command,
+  指令: command,
+}))
+
 export const Config: Schema<Config> = Schema.object({
   DefaultSearchName: Schema.array(Schema.object({
     房间名: Schema.string(),
@@ -65,27 +83,20 @@ export const Config: Schema<Config> = Schema.object({
   Interval: Schema.number().default(30000).description('自动更新数据库中默认房间信息间隔(ms)'),
   WSSPort: Schema.number().default(12000).description('默认websocketServer端口'),
   WSSUserList: Schema.array(Schema.object({
-    名称: Schema.string().default('').description('控制时使用的服务器名称，例如 本地、云服'),
+    名称: Schema.string().default('').description('被控制服务器名'),
     允许操作的用户: Schema.string(),
     Token: Schema.string(),
     连接状态: Schema.boolean().default(false).hidden(),
   })).default([]).role('table').description('设置ws链接token和可以使用websocket的用户'),
   ControlTargetAlias: Schema.array(Schema.object({
-    代称: Schema.string().description('控房第二个参数，例如 本地2、rdcj'),
-    服务器: Schema.string().description('对应 WSSUserList 的序号或名称，例如 1、本地'),
-    存档: Schema.string().default('').description('可选，对应 Go 客户端的存档名或存档别名，例如 Cluster_2、二服、rdcj'),
+    代称: Schema.string().description('被控制目标别名'),
+    服务器: Schema.string().description('被控制服务器名'),
+    存档: Schema.string().default('').description('被控制服务器中存档名'),
   })).default([]).role('table').description('控制目标别名。配置后可使用“控房 本地2 查进程”，插件会自动选择服务器并补上存档参数'),
   CommandAlias: Schema.array(Schema.object({
     代称: Schema.string(),
     指令: Schema.string(),
-  })).default([{
-    代称: "1",
-    指令: "开服",
-  },
-  {
-    代称: "2",
-    指令: "关服",
-  }]).role('table').description('使用指令别名来执行指令(这里的指令是直接发送给服务器的内容)'),
+  })).default(defaultCommandAliases).role('table').description('使用指令别名来执行指令(这里的指令是直接发送给服务器的内容)'),
   IsDebuging: Schema.boolean().default(false).description('设置默认是为调试模式'),
 })
 
