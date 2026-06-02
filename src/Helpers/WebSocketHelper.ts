@@ -3,10 +3,32 @@ import { Context, Logger, Session } from 'koishi';
 import { Config } from '..';
 import { parse } from 'url';
 
+export interface ClientCapability {
+    type: 'dst-ws-client.capabilities'
+    version?: number
+    defaultCluster?: string
+    clusters?: Array<{
+        Name?: string
+        name?: string
+        Worlds?: string[]
+        worlds?: string[]
+        Running?: boolean
+        running?: boolean
+    }>
+    actions?: Record<string, {
+        description?: string
+        aliases?: string[]
+        usage?: string
+        textArg?: string
+    }>
+    aliases?: Record<string, string>
+    clusterAliases?: Record<string, string>
+}
 
 export class WebsocketServer {
     Instance: WSServer;
     private clients: Map<string, WebSocket>; // 用户ID与连接的映射
+    private capabilities: Map<string, ClientCapability>;
     ctx: Context
     config: Config
     logger: Logger
@@ -16,6 +38,7 @@ export class WebsocketServer {
         this.config = config;
         this.logger = logger;
         this.clients = new Map<string, WebSocket>();
+        this.capabilities = new Map<string, ClientCapability>();
         this.sessions = new Map<string, Session>();
     }
 
@@ -53,14 +76,20 @@ export class WebsocketServer {
 
             // 监听消息事件
             ws.on('message', (message) => {
-                this.logger.info(`用户 ${user['允许操作的用户']} 服务器 收到消息: ${message} `);
+                const text = message.toString();
+                if (this.tryHandleCapability(token, user, text)) {
+                    ws.send('服务端已收到: capability');
+                    return;
+                }
+
+                this.logger.info(`用户 ${user['允许操作的用户']} 服务器 收到消息: ${text} `);
                 // 获取对应的session并回复消息
                 const session = this.sessions.get(token);
                 if (session) {
-                    session.send(message.toString());
+                    session.send(text);
                 }
                 // 向客户端发送回复
-                ws.send(`服务端已收到: ${message}`);
+                ws.send(`服务端已收到: ${text}`);
             });
 
             // 监听关闭事件
@@ -68,6 +97,7 @@ export class WebsocketServer {
                 this.logger.info(`用户 ${user['允许操作的用户']} 服务器 已断开连接`);
                 user.连接状态 = false;
                 config.WSSUserList[config.WSSUserList.indexOf(user)] = user;
+                this.capabilities.delete(token);
             });
 
             // 发送欢迎消息
@@ -85,6 +115,71 @@ export class WebsocketServer {
         } else {
             this.logger.warn(`用户 ${session.userId} 的WebSocket连接未建立或已断开`);
         }
+    }
+
+    public ResolveClientCommand(token: string, command: string) {
+        const text = command?.trim();
+        if (!text) return command;
+
+        const capability = this.capabilities.get(token);
+        const mapped = capability?.aliases?.[text];
+        return mapped || command;
+    }
+
+    public FormatClientCommands(token: string) {
+        const capability = this.capabilities.get(token);
+        if (!capability?.actions || Object.keys(capability.actions).length === 0) {
+            return '该服务器尚未上报可用指令，请确认 dst-ws-client 已连接并使用最新版本。';
+        }
+
+        const lines = ['当前 dst-ws-client 可用功能：'];
+        const actionNames = Object.keys(capability.actions).sort();
+        for (const action of actionNames) {
+            const item = capability.actions[action] || {};
+            const aliases = (item.aliases || [])
+                .filter((alias) => alias && alias !== action)
+                .slice(0, 8);
+            const aliasText = aliases.length ? `（${aliases.join(' / ')}）` : '';
+            const usageText = item.usage ? ` ${item.usage}` : '';
+            lines.push(`- ${action}${usageText}${aliasText}: ${item.description || '无描述'}`);
+        }
+
+        const clusters = capability.clusters || [];
+        if (clusters.length) {
+            lines.push('');
+            lines.push('客户端发现的存档：');
+            for (const cluster of clusters) {
+                const name = cluster.name || cluster.Name || '';
+                const worlds = cluster.worlds || cluster.Worlds || [];
+                const running = cluster.running ?? cluster.Running;
+                lines.push(`- ${name}${worlds.length ? ` (${worlds.join(', ')})` : ''}${running ? ' 运行中' : ''}`);
+            }
+        }
+
+        if (capability.defaultCluster) {
+            lines.push('');
+            lines.push(`默认存档：${capability.defaultCluster}`);
+        }
+        return lines.join('\n');
+    }
+
+    private tryHandleCapability(token: string, user: any, text: string) {
+        const trimmed = text.trim();
+        if (!trimmed.startsWith('{')) return false;
+
+        let payload: ClientCapability;
+        try {
+            payload = JSON.parse(trimmed);
+        } catch {
+            return false;
+        }
+        if (payload?.type !== 'dst-ws-client.capabilities') return false;
+
+        this.capabilities.set(token, payload);
+        const actionCount = Object.keys(payload.actions || {}).length;
+        const clusterCount = payload.clusters?.length || 0;
+        this.logger.info(`用户 ${user['允许操作的用户']} 服务器 已同步 ${actionCount} 个客户端功能，${clusterCount} 个存档`);
+        return true;
     }
 
     CloseServer() {

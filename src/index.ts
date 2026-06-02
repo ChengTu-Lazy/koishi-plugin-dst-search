@@ -213,12 +213,17 @@ export async function apply(ctx: Context, config: Config) {
         return `${serverTarget} 服务器未连接`;
       }
       if (!command?.trim()) {
-        return '请输入要执行的控制指令';
+        return WSS.FormatClientCommands(user.Token);
+      }
+      if (['帮助', 'help', '指令', '功能', '?'].includes(command.trim())) {
+        return WSS.FormatClientCommands(user.Token);
       }
       let commandInconfig = config.CommandAlias.find((item: any) => item.代称 === command);
 
       if (commandInconfig) {
         command = commandInconfig.指令;
+      } else {
+        command = WSS.ResolveClientCommand(user.Token, command);
       }
       if (clusterTarget) {
         command = `${clusterTarget} ${command}`;
