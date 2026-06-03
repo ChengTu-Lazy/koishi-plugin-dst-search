@@ -135,6 +135,11 @@ export async function apply(ctx: Context, config: Config) {
 
   //#region 指令
 
+  ctx.middleware((session, next) => {
+    if (WSS.HandleBridgeGroupMessage(session)) return;
+    return next();
+  });
+
   ctx.command('s-simple [name]', "查询饥荒联机服务器简略信息")
     .alias("查房")
     .action(async (Session, name) => {
@@ -209,7 +214,7 @@ export async function apply(ctx: Context, config: Config) {
         return `你没有权限控制 ${serverTarget} 服务器`;
       }
 
-      if (user.连接状态 === false) {
+      if (!WSS.IsClientConnected(user.Token)) {
         return `${serverTarget} 服务器未连接`;
       }
       if (!command?.trim()) {
@@ -217,6 +222,15 @@ export async function apply(ctx: Context, config: Config) {
       }
       if (['帮助', 'help', '指令', '功能', '?'].includes(command.trim())) {
         return WSS.FormatClientCommands(user.Token);
+      }
+      const chatBridgeCommand = command.trim();
+      if (['开启对话', '开启聊天', '打开对话', '打开聊天'].includes(chatBridgeCommand)) {
+        WSS.EnableChatBridge(session, user.Token, clusterTarget || '');
+        return `已开启 ${serverTarget} 的对话桥接`;
+      }
+      if (['关闭对话', '关闭聊天', '停止对话', '停止聊天'].includes(chatBridgeCommand)) {
+        WSS.DisableChatBridge(user.Token);
+        return `已关闭 ${serverTarget} 的对话桥接`;
       }
       let commandInconfig = config.CommandAlias.find((item: any) => item.代称 === command);
 
