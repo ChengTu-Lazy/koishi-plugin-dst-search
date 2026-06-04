@@ -415,8 +415,65 @@ const dstEmoteNames: Record<string, string> = {
     yawn: '打哈欠',
 };
 
+const dstEmojiCodepointNames: Record<number, string> = {
+    0xF0000: 'arcane',
+    0xF0001: 'beefalo',
+    0xF0002: 'chest',
+    0xF0003: 'chester',
+    0xF0004: 'crockpot',
+    0xF0005: 'eyeball',
+    0xF0006: 'faketeeth',
+    0xF0007: 'farm',
+    0xF0008: 'fire',
+    0xF0009: 'ghost',
+    0xF000A: 'grave',
+    0xF000B: 'hambat',
+    0xF000C: 'hammer',
+    0xF000D: 'heart',
+    0xF000E: 'hunger',
+    0xF000F: 'lightbulb',
+    0xF0010: 'pig',
+    0xF0011: 'poop',
+    0xF0012: 'redgem',
+    0xF0013: 'sanity',
+    0xF0014: 'sciencemachine',
+    0xF0015: 'skull',
+    0xF0016: 'tophat',
+    0xF0017: 'web',
+    0xF0018: 'battle',
+    0xF0019: 'flex',
+    0xF001A: 'gold',
+    0xF001B: 'torch',
+    0xF001C: 'abigail',
+    0xF001D: 'alchemyengine',
+    0xF001E: 'backpack',
+    0xF001F: 'beehive',
+    0xF0020: 'berry_bush',
+    0xF0021: 'carrot',
+    0xF0022: 'egg',
+    0xF0023: 'eyeplant',
+    0xF0024: 'firepit',
+    0xF0025: 'horn',
+    0xF0026: 'meat_big',
+    0xF0027: 'refine',
+    0xF0028: 'salt',
+    0xF0029: 'shadowmanipulator',
+    0xF002A: 'shovel',
+    0xF002B: 'thumbsup',
+    0xF002C: 'trap',
+    0xF002D: 'trophy',
+    0xF002E: 'wave',
+    0xF002F: 'wormhole',
+    0xF0030: 'florid_postern',
+    0xF0031: 'resurrection_stone',
+};
+
 function translateDSTEmotes(text = '') {
     return text
+        .replace(/[\u{F0000}-\u{F0031}]/gu, (match) => {
+            const name = dstEmojiCodepointNames[match.codePointAt(0) || 0];
+            return name ? dstEmoteText('emoji', name) : match;
+        })
         .replace(/<\s*(emoji|emote)[_:-]([a-z0-9_]+)\s*>/gi, (_, kind, name) => dstEmoteText(kind, name))
         .replace(/\b(emoji|emote)[_:-]([a-z0-9_]+)\b/gi, (_, kind, name) => dstEmoteText(kind, name))
         .replace(/:([a-z0-9_]+):/gi, (match, name) => {
