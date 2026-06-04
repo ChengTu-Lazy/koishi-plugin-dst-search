@@ -478,14 +478,14 @@ function translateDSTEmotes(text = '') {
         .replace(/\b(emoji|emote)[_:-]([a-z0-9_]+)\b/gi, (_, kind, name) => dstEmoteText(kind, name))
         .replace(/:([a-z0-9_]+):/gi, (match, name) => {
             const translated = resolveDSTEmoteName(name);
-            return translated ? `：${translated}：` : match;
+            return translated || match;
         });
 }
 
 function dstEmoteText(kind: string, name: string) {
     const normalized = normalizeDSTEmoteName(name);
     const source = kind?.toLowerCase() === 'emote' ? dstEmoteNames : dstEmojiNames;
-    return `：${source[normalized] || normalized}：`;
+    return source[normalized] || normalized;
 }
 
 function resolveDSTEmoteName(name = '') {
