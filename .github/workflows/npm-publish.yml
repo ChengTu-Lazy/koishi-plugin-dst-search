@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
 
 jobs:
@@ -31,7 +31,24 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Read package version
+        id: package-version
+        shell: bash
+        run: echo "version=$(node -p 'require(\"./package.json\").version')" >> "$GITHUB_OUTPUT"
+
       - name: Publish to npm
         run: npm publish --access public --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.package-version.outputs.version }}
+          name: v${{ steps.package-version.outputs.version }}
+          body: |
+            ## v${{ steps.package-version.outputs.version }}
+
+            - 优化 DST 对话桥接群名解析，优先通过 Koishi `getGuild()` 获取真实群名。
+            - 群名获取失败时回退为“群聊”，避免把群号同步到 DST。
+            - 增加 DST 聊天表情与动作表情翻译，按 `：表情内容：` 格式发送到群聊。

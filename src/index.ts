@@ -135,8 +135,8 @@ export async function apply(ctx: Context, config: Config) {
 
   //#region 指令
 
-  ctx.middleware((session, next) => {
-    if (WSS.HandleBridgeGroupMessage(session)) return;
+  ctx.middleware(async (session, next) => {
+    if (await WSS.HandleBridgeGroupMessage(session)) return;
     return next();
   });
 

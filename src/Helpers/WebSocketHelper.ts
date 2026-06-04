@@ -50,6 +50,7 @@ export class WebsocketServer {
     logger: Logger
     sessions: Map<string, Session>
     private chatBindings: Map<string, ChatBridgeBinding>
+    private groupNameCache: Map<string, string>
     constructor(ctx: Context, config: Config, logger: Logger) {
         this.ctx = ctx;
         this.config = config;
@@ -58,6 +59,7 @@ export class WebsocketServer {
         this.capabilities = new Map<string, ClientCapability>();
         this.sessions = new Map<string, Session>();
         this.chatBindings = new Map<string, ChatBridgeBinding>();
+        this.groupNameCache = new Map<string, string>();
     }
 
     CreatServer(config: Config) {
@@ -167,7 +169,7 @@ export class WebsocketServer {
         }));
     }
 
-    public HandleBridgeGroupMessage(session: Session) {
+    public async HandleBridgeGroupMessage(session: Session) {
         if (session.userId === session.selfId) return false;
         const currentChannelKey = sessionChannelKey(session);
         const bindingEntry = [...this.chatBindings.entries()].find(([, binding]) => {
@@ -179,7 +181,7 @@ export class WebsocketServer {
         if (!text || isControlLikeMessage(text)) return false;
 
         const [token, binding] = bindingEntry;
-        const groupName = (session as any).guildName || (session as any).channelName || session.channelId || session.guildId || '沙盒';
+        const groupName = await this.resolveGroupName(session);
         const nickname = session.username || session.userId;
         const formatted = `【${groupName}】【${nickname}】（${session.userId}）：${text}`;
         this.SendRawToClient(token, JSON.stringify({
@@ -188,6 +190,48 @@ export class WebsocketServer {
             text: formatted,
         }));
         return true;
+    }
+
+    private async resolveGroupName(session: Session) {
+        const directName = firstText(
+            (session as any).guildName,
+            (session as any).channelName,
+            (session as any).event?.guild?.name,
+            (session as any).event?.guild?.guildName,
+            (session as any).event?.guild?.title,
+            (session as any).event?.channel?.name,
+            (session as any).event?.channel?.channelName,
+            (session as any).event?.channel?.title,
+            (session as any).event?.message?.group_name,
+            (session as any).event?.message?.groupName,
+            (session as any).event?.group_name,
+            (session as any).event?.groupName,
+            (session as any).event?.original?.group_name,
+            (session as any).event?.original?.groupName,
+            (session as any).event?.original?.sender?.group_name,
+            (session as any).event?.original?.sender?.groupName,
+        );
+        if (directName) return directName;
+
+        const cacheKey = sessionChannelKey(session);
+        const cached = this.groupNameCache.get(cacheKey);
+        if (cached) return cached;
+
+        const guildId = session.guildId;
+        if (guildId && typeof session.bot?.getGuild === 'function') {
+            try {
+                const guild = await session.bot.getGuild(guildId);
+                const name = firstText((guild as any)?.name, (guild as any)?.guildName, (guild as any)?.title);
+                if (name) {
+                    this.groupNameCache.set(cacheKey, name);
+                    return name;
+                }
+            } catch (error) {
+                this.logger.warn('获取群名失败: %s', error);
+            }
+        }
+
+        return session.guildId ? '群聊' : '沙盒';
     }
 
     public ResolveClientCommand(token: string, command: string) {
@@ -276,7 +320,7 @@ export class WebsocketServer {
         if (payload?.type !== 'dst-ws-client.chat') return false;
 
         const binding = this.chatBindings.get(token);
-        const message = payload.text?.trim();
+        const message = translateDSTEmotes(payload.text?.trim() || '');
         if (!binding || !message) return true;
 
         const cluster = payload.cluster || binding.cluster || '默认存档';
@@ -298,6 +342,111 @@ function plainSessionText(content = '') {
         .replace(/&gt;/g, '>')
         .replace(/&amp;/g, '&')
         .trim();
+}
+
+const dstEmojiNames: Record<string, string> = {
+    abigail: '阿比盖尔',
+    alchemyengine: '炼金引擎',
+    arcane: '魔法',
+    backpack: '背包',
+    battle: '战斗',
+    beefalo: '皮弗娄牛',
+    beehive: '蜂窝',
+    berry_bush: '浆果丛',
+    carrot: '胡萝卜',
+    chest: '箱子',
+    chester: '切斯特',
+    crockpot: '烹饪锅',
+    egg: '鸟蛋',
+    eyeball: '眼球',
+    eyeplant: '眼球草',
+    faketeeth: '假牙',
+    farm: '农场',
+    fire: '火',
+    firepit: '火坑',
+    flex: '强壮',
+    florid_postern: '绚丽之门',
+    ghost: '幽灵',
+    gold: '金子',
+    grave: '坟墓',
+    hambat: '火腿棒',
+    hammer: '锤子',
+    heart: '爱心',
+    horn: '牛角',
+    hunger: '饥饿',
+    lightbulb: '荧光果',
+    meat_big: '大肉',
+    pig: '猪人',
+    poop: '便便',
+    redgem: '红宝石',
+    refine: '精炼',
+    resurrection_stone: '复活石',
+    salt: '盐',
+    sanity: '理智',
+    sciencemachine: '科学机器',
+    shadowmanipulator: '暗影操控器',
+    shovel: '铲子',
+    skull: '骷髅',
+    thumbsup: '点赞',
+    tophat: '高礼帽',
+    torch: '火炬',
+    trap: '陷阱',
+    trophy: '奖杯',
+    wave: '挥手',
+    web: '蜘蛛网',
+    wormhole: '虫洞',
+};
+
+const dstEmoteNames: Record<string, string> = {
+    carol: '唱歌',
+    dance_chicken: '小鸡舞',
+    dance_robot: '机器人舞',
+    dance_step: '舞步',
+    fistshake: '挥拳',
+    flex: '展示肌肉',
+    impatient: '不耐烦',
+    jumpcheer: '欢呼',
+    laugh: '大笑',
+    shrug: '耸肩',
+    sleepy: '困倦',
+    slowclap: '缓慢鼓掌',
+    swoon: '陶醉',
+    tiphat: '脱帽致意',
+    yawn: '打哈欠',
+};
+
+function translateDSTEmotes(text = '') {
+    return text
+        .replace(/<\s*(emoji|emote)[_:-]([a-z0-9_]+)\s*>/gi, (_, kind, name) => dstEmoteText(kind, name))
+        .replace(/\b(emoji|emote)[_:-]([a-z0-9_]+)\b/gi, (_, kind, name) => dstEmoteText(kind, name))
+        .replace(/:([a-z0-9_]+):/gi, (match, name) => {
+            const translated = resolveDSTEmoteName(name);
+            return translated ? `：${translated}：` : match;
+        });
+}
+
+function dstEmoteText(kind: string, name: string) {
+    const normalized = normalizeDSTEmoteName(name);
+    const source = kind?.toLowerCase() === 'emote' ? dstEmoteNames : dstEmojiNames;
+    return `：${source[normalized] || normalized}：`;
+}
+
+function resolveDSTEmoteName(name = '') {
+    const normalized = normalizeDSTEmoteName(name);
+    return dstEmojiNames[normalized] || dstEmoteNames[normalized] || '';
+}
+
+function normalizeDSTEmoteName(name = '') {
+    return name.toLowerCase().replace(/^(emoji|emote)[_:-]/, '').trim();
+}
+
+function firstText(...values: any[]) {
+    for (const value of values) {
+        if (typeof value !== 'string') continue;
+        const text = value.trim();
+        if (text) return text;
+    }
+    return '';
 }
 
 function isControlLikeMessage(text: string) {
