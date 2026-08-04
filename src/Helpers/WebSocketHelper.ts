@@ -42,7 +42,7 @@ interface ChatBridgeBinding {
 }
 
 export class WebsocketServer {
-    Instance: WSServer;
+    Instance?: WSServer;
     private clients: Map<string, WebSocket>; // 用户ID与连接的映射
     private capabilities: Map<string, ClientCapability>;
     ctx: Context
@@ -87,7 +87,11 @@ export class WebsocketServer {
                 return;
             }
 
-            // 添加客户端到Map
+            // 同一个 token 只保留最新连接，避免旧连接在重连后覆盖新连接状态。
+            const previousClient = this.clients.get(token);
+            if (previousClient && previousClient !== ws) {
+                previousClient.terminate();
+            }
             this.clients.set(token, ws);
 
             this.logger.info(`用户 ${user['允许操作的用户']} 服务器 已连接`);
@@ -106,9 +110,16 @@ export class WebsocketServer {
                     return;
                 }
 
+                // 客户端重连时会主动上报连接状态，这不是控制命令的执行结果。
+                if (isClientConnectedMessage(text)) {
+                    this.logger.info(`用户 ${user['允许操作的用户']} 服务器状态: ${text}`);
+                    return;
+                }
+
                 this.logger.info(`用户 ${user['允许操作的用户']} 服务器 收到消息: ${text} `);
-                // 获取对应的session并回复消息
+                // 一个客户端一次只允许一个未完成命令，确保结果回到发起命令的用户。
                 const session = this.sessions.get(token);
+                this.sessions.delete(token);
                 if (session) {
                     session.send(text);
                 }
@@ -116,9 +127,18 @@ export class WebsocketServer {
                 ws.send(`服务端已收到: ${text}`);
             });
 
+            ws.on('error', (error) => {
+                this.logger.warn(`Token ${token} 的 WebSocket 连接异常: %s`, error);
+            });
+
             // 监听关闭事件
             ws.on('close', () => {
+                // 旧连接可能在新连接建立后才触发 close，不能把新连接标记为断开。
+                if (this.clients.get(token) !== ws) return;
+
                 this.logger.info(`用户 ${user['允许操作的用户']} 服务器 已断开连接`);
+                this.clients.delete(token);
+                this.sessions.delete(token);
                 user.连接状态 = false;
                 config.WSSUserList[config.WSSUserList.indexOf(user)] = user;
                 this.capabilities.delete(token);
@@ -131,9 +151,18 @@ export class WebsocketServer {
 
     // 发送消息给指定连接服务器
     public SendToClient(session: Session, token: string, message: string) {
-        this.SendRawToClient(token, message);
+        if (this.sessions.has(token)) {
+            this.logger.warn(`Token ${token} 仍有控制命令未完成，拒绝并发命令`);
+            return false;
+        }
+
+        if (!this.SendRawToClient(token, message)) {
+            return false;
+        }
+
         this.logger.info(`已发送消息给用户 ${session.userId}: ${message}`);
         this.sessions.set(token, session);
+        return true;
     }
 
     public SendRawToClient(token: string, message: string) {
@@ -331,7 +360,30 @@ export class WebsocketServer {
     }
 
     CloseServer() {
-        this.Instance.close();
+        // WSServer.close() 只停止监听，不会关闭已经建立的客户端连接。
+        // 必须主动终止连接，否则客户端可能仍能收到旧实例的 pong，无法及时重连到新实例。
+        for (const [token, client] of this.clients) {
+            client.terminate();
+            const user = this.config.WSSUserList.find((item: any) => item.Token === token);
+            if (user) {
+                user.连接状态 = false;
+                this.config.WSSUserList[this.config.WSSUserList.indexOf(user)] = user;
+            }
+        }
+        this.clients.clear();
+        this.capabilities.clear();
+        this.sessions.clear();
+        this.chatBindings.clear();
+
+        const instance = this.Instance;
+        this.Instance = undefined;
+        if (!instance) return;
+
+        try {
+            instance.close();
+        } catch (error) {
+            this.logger.warn('WebSocket 服务器关闭时出现异常: %s', error);
+        }
     }
 }
 
@@ -508,6 +560,10 @@ function firstText(...values: any[]) {
 
 function isControlLikeMessage(text: string) {
     return /^(控房|查房|s-simple|s-detail|s-image|s-control|\|\||[.。]\d+)/.test(text.trim());
+}
+
+function isClientConnectedMessage(text: string) {
+    return text.startsWith('DST 脚本客户端已连接：');
 }
 
 function sessionChannelKey(session: Session) {

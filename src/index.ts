@@ -84,7 +84,7 @@ export const Config: Schema<Config> = Schema.object({
   WSSPort: Schema.number().default(12000).description('默认websocketServer端口'),
   WSSUserList: Schema.array(Schema.object({
     名称: Schema.string().default('').description('被控制服务器名'),
-    允许操作的用户: Schema.string(),
+    允许操作的用户: Schema.string().description('可填写多个用户ID，使用逗号、中文逗号、顿号、分号、空格或换行分隔'),
     Token: Schema.string(),
     连接状态: Schema.boolean().default(false).hidden(),
   })).default([]).role('table').description('设置ws链接token和可以使用websocket的用户'),
@@ -210,7 +210,7 @@ export async function apply(ctx: Context, config: Config) {
       if (!user) {
         return `要控制的 ${serverTarget} 服务器不存在`;
       }
-      if (userId !== user.允许操作的用户) {
+      if (!isAllowedWSSUser(user.允许操作的用户, userId)) {
         return `你没有权限控制 ${serverTarget} 服务器`;
       }
 
@@ -242,7 +242,9 @@ export async function apply(ctx: Context, config: Config) {
       if (clusterTarget) {
         command = `${clusterTarget} ${command}`;
       }
-      WSS.SendToClient(session, user.Token, command);
+      if (!WSS.SendToClient(session, user.Token, command)) {
+        return `${serverTarget} 上一条控制命令尚未完成，请稍后再试`;
+      }
     })
 
   //#endregion
@@ -270,5 +272,19 @@ function resolveWSSUser(list: any[] = [], target: any) {
     return [user.名称, user.别名, user.服务器名].some((value) => {
       return value?.toString().trim() === text;
     });
+  });
+}
+
+function isAllowedWSSUser(allowedUsers: unknown, userId: unknown) {
+  const normalizedUserId = userId?.toString().trim();
+  if (!normalizedUserId) return false;
+
+  const values = Array.isArray(allowedUsers) ? allowedUsers : [allowedUsers];
+  return values.some((value) => {
+    return value?.toString()
+      .split(/[\s,，、;；|]+/)
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .includes(normalizedUserId);
   });
 }

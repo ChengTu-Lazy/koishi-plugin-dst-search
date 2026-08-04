@@ -49,6 +49,6 @@ jobs:
           body: |
             ## v${{ steps.package-version.outputs.version }}
 
-            - 优化 DST 对话桥接群名解析，优先通过 Koishi `getGuild()` 获取真实群名。
-            - 群名获取失败时回退为“群聊”，避免把群号同步到 DST。
-            - 增加 DST 聊天表情、动作表情和私有 Unicode 表情翻译，按纯文本释义发送到群聊。
+            - 支持为同一个 DST 客户端配置多个可操作用户。
+            - 修复 Koishi 或插件重启后 WebSocket 客户端无法及时重连的问题。
+            - 修复多用户控制结果串线，并拒绝同一客户端的并发控制命令。
